@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '../../atoms';
+import { calcMonthlySimple } from '../../../lib/finance';
 
 export interface CreditCalculatorProps {
   price: number;
@@ -60,20 +61,24 @@ const CreditCalculator: React.FC<CreditCalculatorProps> = ({
     return p;
   }, [price, downPayment]);
 
+  // Используем единую функцию расчета из finance.ts
   const payment = useMemo(() => {
-    const P = loanAmount;
-    const n = termMonths;
-    const i = monthlyRate;
-
-    if (P <= 0 || n <= 0) return 0;
-
-    if (n === 1) {
-      return Math.round(P * (1 + i));
+    if (!price || price <= 0 || loanAmount <= 0 || termMonths <= 0) return 0;
+    
+    try {
+      // Конвертируем месячную ставку в годовую для единой функции
+      const annualRate = monthlyRate * 12 * 100; // 0.02458 * 12 * 100 = ~29.5%
+      const result = calcMonthlySimple({
+        carPrice: price,
+        downPayment,
+        termMonths,
+        annualRate,
+      });
+      return result.monthlyPayment;
+    } catch {
+      return 0;
     }
-    const pow = Math.pow(1 + i, n);
-    const A = P * (i * pow) / (pow - 1);
-    return Math.round(A);
-  }, [loanAmount, termMonths, monthlyRate]);
+  }, [price, downPayment, termMonths, monthlyRate, loanAmount]);
 
   const handleDownChange = (value: number) => {
     const clipped = Math.min(Math.max(value, downMin), downMax);

@@ -7,7 +7,8 @@ const LocationSection: React.FC = () => {
   useEffect(() => {
     if (!mapRef.current) return;
     // Очистим контейнер перед вставкой (во избежание дублей при HMR)
-    mapRef.current.innerHTML = '';
+    // Используем replaceChildren() вместо innerHTML для безопасности
+    mapRef.current.replaceChildren();
 
     const script = document.createElement('script');
     script.type = 'text/javascript';
@@ -17,7 +18,7 @@ const LocationSection: React.FC = () => {
     mapRef.current.appendChild(script);
 
     return () => {
-      if (mapRef.current) mapRef.current.innerHTML = '';
+      if (mapRef.current) mapRef.current.replaceChildren();
     };
   }, []);
 

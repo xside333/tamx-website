@@ -24,10 +24,16 @@ module.exports = {
       PORT: 8000
     },
 
-    // Логи
+    // Логи с ротацией
     error_file: './logs/err.log',
     out_file: './logs/out.log',
     log_file: './logs/combined.log',
-    time: true
+    time: true,
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    merge_logs: false,
+    
+    // Ротация логов: максимум 10 файлов по 10MB
+    max_size: '10M',
+    max_files: 10
   }]
 };
