@@ -1,0 +1,32 @@
+{
+  "empty_exchange_rates": {
+    "message": "Таблица exchange_rates вернула пустой результат!",
+    "reason": "Нет данных по курсам валют в таблице exchange_rates в Supabase.",
+    "solution": "Проверь парсер, который сохраняет курсы валют."
+  },
+  "empty_customs_rates": {
+    "message": "Таблица customs_rates вернула пустой результат!",
+    "reason": "Нет данных по таможенным ставкам в таблице customs_rates.",
+    "solution": "Проверь заполнение таблицы customs_rates."
+  },
+  "empty_util_rates": {
+    "message": "Таблица util_rates вернула пустой результат!",
+    "reason": "Отсутствуют данные по утилизационным ставкам в таблице util_rates.",
+    "solution": "Проверь актуальность данных таблицы util_rates."
+  },
+  "empty_customs_fee": {
+    "message": "Таблица customs_fee вернула пустой результат!",
+    "reason": "Отсутствуют данные по таможенному оформлению (customs_fee).",
+    "solution": "Убедись, что таблица customs_fee корректно наполняется парсером."
+  },
+  "empty_customs_rate_0_3": {
+    "message": "Таблица customs_rate_0_3 вернула пустой результат!",
+    "reason": "Отсутствуют ставки таможенных пошлин для категории rate_0_3.",
+    "solution": "Проверь правильность заполнения таблицы customs_rate_0_3."
+  },
+  "empty_swift_rates": {
+    "message": "Таблица SWIFT вернула пустой результат!",
+    "reason": "Отсутствуют данные курса валюты SWIFT.",
+    "solution": "Проверь корректность заполнения таблицы SWIFT."
+  }
+}

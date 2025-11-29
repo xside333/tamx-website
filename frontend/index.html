@@ -1,0 +1,272 @@
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Автомобиль с доставкой в любой город России - Тарасов AUTO</title>
+    <meta name="description" content="Автомобили из Южной Кореи с доставкой в любой город России" />
+    <meta name="author" content="Tarasov AUTO" />
+
+    <!-- Иконки и PWA -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/spa/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/spa/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-title" content="T13" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- Safari pinned-tab -->
+    <link rel="mask-icon" href="/spa/apple-touch-icon.png" color="#000000" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Шрифты -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:title" content="Автомобиль с доставкой в любой город России - Тарасов AUTO" />
+    <meta property="og:description" content="Автомобили из Южной Кореи с доставкой в любой город России" />
+    <meta property="og:type" content="website" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        var CONFIG = {
+          GA4_MEASUREMENT_ID: 'G-XXXXXXX',
+          YM_COUNTER_ID: '104055700',
+          CONSENT_VERSION: '1.0',
+          COOKIE_MAX_AGE_DAYS: 365
+        };
+
+        // ======= helpers: cookies & consent =======
+        function setCookie(name, value, opts) {
+          opts = opts || {};
+          var parts = [name + '=' + encodeURIComponent(value), 'Path=/'];
+          if (opts.maxAgeDays) {
+            var expires = new Date(Date.now() + opts.maxAgeDays * 864e5).toUTCString();
+            parts.push('Expires=' + expires);
+          }
+          if (location.protocol === 'https:') parts.push('Secure');
+          parts.push('SameSite=Lax');
+          document.cookie = parts.join('; ');
+        }
+        function getCookie(name) {
+          var target = name + '=';
+          var list = document.cookie ? document.cookie.split(';') : [];
+          for (var i = 0; i < list.length; i++) {
+            var c = list[i].trim();
+            if (c.indexOf(target) === 0) {
+              return decodeURIComponent(c.substring(target.length));
+            }
+          }
+          return null;
+        }
+        function getConsent() {
+          var v = getCookie('cookie_consent');
+          if (!v) return null;
+          try { return JSON.parse(v); } catch (e) { return null; }
+        }
+        function hideBanner() {
+          var el = document.getElementById('cookie-consent-banner');
+          if (el && el.parentNode) el.parentNode.removeChild(el);
+        }
+        function acceptConsent() {
+          var payload = { accepted: true, ts: new Date().toISOString(), version: CONFIG.CONSENT_VERSION };
+          setCookie('cookie_consent', JSON.stringify(payload), { maxAgeDays: CONFIG.COOKIE_MAX_AGE_DAYS });
+          hideBanner();
+          loadAnalyticsIfConsented();
+        }
+
+        // ======= analytics queue + SPA pageviews =======
+        var analyticsReady = false;
+        var queue = [];
+        function dispatch(evt) {
+          var e = evt || {}; var name = e.name || e.eventName; var params = e.params || e.payload || {};
+          var gaId = CONFIG.GA4_MEASUREMENT_ID && /^G-/.test(CONFIG.GA4_MEASUREMENT_ID) ? CONFIG.GA4_MEASUREMENT_ID : null;
+          var ymId = CONFIG.YM_COUNTER_ID && /^\d+$/.test(CONFIG.YM_COUNTER_ID) ? CONFIG.YM_COUNTER_ID : null;
+          if (name === 'page_view') {
+            if (gaId && window.gtag) window.gtag('event', 'page_view', {
+              page_location: location.href,
+              page_path: params.path || location.pathname,
+              page_title: params.title || document.title
+            });
+            if (ymId && window.ym) window.ym(ymId, 'hit', params.path || location.pathname, {
+              title: params.title || document.title,
+              referer: document.referrer
+            });
+          } else {
+            if (gaId && window.gtag) window.gtag('event', name || 'event', params);
+            if (ymId && window.ym) window.ym(ymId, 'reachGoal', name || 'event', params);
+          }
+        }
+        function track(name, params) {
+          var evt = { name: name, params: params || {} };
+          if (!analyticsReady) { queue.push(evt); return; }
+          try { dispatch(evt); } catch (e) {}
+        }
+        window.track = track;
+
+        // Универсальный SPA-хук (используется и для YM-только, и для полной аналитики)
+        function hookSpaNavigation() {
+          if (window.__spaHooked) return; window.__spaHooked = true;
+          var _ps = history.pushState, _rs = history.replaceState;
+          function fire() {
+            // если полная аналитика готова — через track; иначе — сразу YM
+            if (analyticsReady) {
+              track('page_view', { path: location.pathname, title: document.title });
+            } else if (window.ym && /^\d+$/.test(CONFIG.YM_COUNTER_ID)) {
+              window.ym(CONFIG.YM_COUNTER_ID, 'hit', location.pathname, {
+                title: document.title,
+                referer: document.referrer
+              });
+            }
+          }
+          try { history.pushState = function(){ _ps.apply(history, arguments); window.dispatchEvent(new Event('locationchange')); }; } catch (e) {}
+          try { history.replaceState = function(){ _rs.apply(history, arguments); window.dispatchEvent(new Event('locationchange')); }; } catch (e) {}
+          window.addEventListener('popstate', function(){ window.dispatchEvent(new Event('locationchange')); });
+          window.addEventListener('locationchange', fire);
+        }
+
+        function loadScript(src, onload) {
+          var s = document.createElement('script');
+          s.async = true; s.src = src;
+          s.onload = function(){ try { onload && onload(); } catch (e) {} };
+          s.onerror = s.onload;
+          document.head.appendChild(s);
+        }
+
+        // 🔵 Грузим Яндекс.Метрику всегда (минимальный режим) и отправляем первый хит
+        function initYandexBasic() {
+          var ymId = CONFIG.YM_COUNTER_ID && /^\d+$/.test(CONFIG.YM_COUNTER_ID) ? CONFIG.YM_COUNTER_ID : null;
+          if (!ymId) return;
+          if (window.__ymBasicLoaded) return; window.__ymBasicLoaded = true;
+
+          // если ym уже инициализирован где-то ещё — не дублируем загрузку
+          if (typeof window.ym !== 'function') {
+            (function(m,e,t,r,i,k,a){
+              m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+              m[i].l=1*new Date();
+              k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a);
+            })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
+          }
+
+          // Инициализация в минимальном режиме
+          var initOnce = function() {
+            try {
+              window.ym(ymId, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
+              // первый хит сразу
+              window.ym(ymId, 'hit', location.pathname, { title: document.title, referer: document.referrer });
+              // и хук SPA
+              hookSpaNavigation();
+            } catch (e) {}
+          };
+
+          // если скрипт уже подхватился — сразу инициализируем; иначе — чуть подождём
+          if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(initOnce, 0);
+          } else {
+            document.addEventListener('DOMContentLoaded', initOnce);
+          }
+        }
+
+        // 🟢 Полная аналитика (GA4 + YM с очередью и track) — только по согласию
+        function loadAnalyticsIfConsented() {
+          var c = getConsent();
+          if (!c || c.accepted !== true) return;
+          var gaId = CONFIG.GA4_MEASUREMENT_ID && /^G-/.test(CONFIG.GA4_MEASUREMENT_ID) ? CONFIG.GA4_MEASUREMENT_ID : null;
+          var ymId = CONFIG.YM_COUNTER_ID && /^\d+$/.test(CONFIG.YM_COUNTER_ID) ? CONFIG.YM_COUNTER_ID : null;
+          var pending = 0; var any = false;
+
+          function done(){
+            pending--;
+            if (pending <= 0) {
+              analyticsReady = true;
+              while (queue.length) dispatch(queue.shift());
+              track('page_view', { path: location.pathname, title: document.title });
+              hookSpaNavigation();
+            }
+          }
+
+          if (gaId) {
+            any = true; pending++;
+            loadScript('https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(gaId), function(){
+              try {
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){ window.dataLayer.push(arguments); }
+                window.gtag = gtag;
+                window.gtag('js', new Date());
+                window.gtag('config', gaId);
+              } catch (e) {}
+              done();
+            });
+          }
+
+          if (ymId) {
+            any = true; pending++;
+            // если базовая YM уже загружена — не грузим скрипт повторно
+            if (typeof window.ym === 'function') {
+              try {
+                // Дополнительная инициализация не требуется — просто считаем YM готовой
+              } catch (e) {}
+              done();
+            } else {
+              loadScript('https://mc.yandex.ru/metrika/tag.js', function(){
+                try {
+                  window.ym = window.ym || function(){ (window.ym.a = window.ym.a || []).push(arguments); };
+                  window.ym.l = 1 * new Date();
+                  window.ym(ymId, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
+                } catch (e) {}
+                done();
+              });
+            }
+          }
+
+          if (!any) {
+            analyticsReady = true;
+            while (queue.length) dispatch(queue.shift());
+          }
+        }
+        window.loadAnalyticsIfConsented = loadAnalyticsIfConsented;
+
+        function createBanner() {
+          var c = getConsent(); if (c && c.accepted) return;
+          var bar = document.createElement('div');
+          bar.id = 'cookie-consent-banner';
+          bar.setAttribute('style', 'position:fixed;left:0;right:0;bottom:0;z-index:10000;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;background:#ffffff;color:#0b0b0b;border-top:1px solid #e6e8ef;box-shadow:0 -4px 12px rgba(0,0,0,0.08);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Arial;');
+          var text = document.createElement('div');
+          text.setAttribute('style', 'margin-right:12px;flex:1;min-width:0;');
+          text.innerHTML = 'Мы используем cookies для улучшения работы сайта. <a href="/privacy" style="text-decoration:underline;">Подробнее</a>';
+          var btn = document.createElement('button');
+          btn.id = 'cookie-ok';
+          btn.setAttribute('style', 'flex:0 0 auto;padding:8px 14px;border-radius:8px;border:1px solid #e6e8ef;background:#D72E36;color:#ffffff;cursor:pointer;');
+          btn.textContent = 'ОК';
+          btn.addEventListener('click', acceptConsent);
+          bar.appendChild(text); bar.appendChild(btn);
+          document.body.appendChild(bar);
+        }
+
+        // ======= boot =======
+        document.addEventListener('DOMContentLoaded', function () {
+          createBanner();
+          // Метрика — всегда (первый хит + SPA)
+          initYandexBasic();
+
+          // Полная аналитика — только по согласию
+          var c = getConsent();
+          if (c && c.accepted) loadAnalyticsIfConsented();
+        });
+      })();
+    </script>
+
+    <!-- Vite dev/production entry -->
+    <script type="module" src="/client/App.tsx"></script>
+  </body>
+</html>

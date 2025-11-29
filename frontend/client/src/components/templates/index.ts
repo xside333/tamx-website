@@ -1,0 +1,1 @@
+export { CarDetailTemplate } from './CarDetailTemplate';

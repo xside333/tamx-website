@@ -1,0 +1,33 @@
+{
+  "name": "tarasov-auto-production",
+  "version": "1.0.0",
+  "description": "Production server for Tarasov Auto catalog",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs --env production",
+    "pm2:stop": "pm2 stop tarasov-auto-frontend",
+    "pm2:restart": "pm2 restart tarasov-auto-frontend",
+    "pm2:delete": "pm2 delete tarasov-auto-frontend",
+    "pm2:logs": "pm2 logs tarasov-auto-frontend",
+    "pm2:monit": "pm2 monit",
+    "pm2:status": "pm2 status"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "express",
+    "static-server",
+    "spa",
+    "production"
+  ],
+  "author": "Tarasov Auto",
+  "license": "MIT"
+}

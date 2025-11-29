@@ -1,0 +1,69 @@
+# Dependencies
+**/node_modules/
+node_modules/
+
+# Build artifacts
+**/dist/
+**/build/
+
+# Logs
+**/*.log
+**/logs/*.log
+database/encar-webcatalog-recalc/logs/
+frontend/production/logs/
+
+# Environment variables (храним в приватном репо для backup)
+# **/.env
+# **/.env.local
+# **/.env.production
+# **/.env.*.local
+# .env
+# .env.local
+# .env.production
+
+# Cache
+**/cacheFiles/
+backend/cacheFiles/
+
+# Keys and secrets (храним в приватном репо для backup)
+# **/keys/
+# backend/keys/
+# *.pem
+# *.key
+# *.cert
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj*
+*.sln
+*.sw?
+
+# Lock files (опционально, закомментируйте если хотите их хранить)
+# **/package-lock.json
+# **/pnpm-lock.yaml
+# **/yarn.lock
+
+# PM2
+.pm2/
+**/.pm2/
+
+# Temporary
+*.tmp
+*.temp
+.cache/
+
+# Database
+*.sqlite
+*.db
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Nginx configs (могут содержать чувствительные данные)
+nginx_restore_guide.txt
