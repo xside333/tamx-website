@@ -26,6 +26,20 @@ export function formatYear(year: number, month?: number): string {
   return year.toString();
 }
 
+// Default monthly payment logic used across the app (50% down, 60 months, 2.458%/month, min loan 100k)
+export function computeDefaultMonthlyPayment(price: number): number {
+  const downMin = 100000;
+  const downMax = Math.max(price - 100000, downMin);
+  const down50 = Math.round(price * 0.5);
+  const down = Math.min(Math.max(down50, downMin), downMax);
+  const P = Math.max(price - down, 100000);
+  const n = 60; // 5 лет
+  const i = 0.02458; // 2.458% в месяц
+  if (n === 1) return Math.round(P * (1 + i));
+  const pow = Math.pow(1 + i, n);
+  return Math.round(P * (i * pow) / (pow - 1));
+}
+
 // Debounce function for search/filter inputs
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
