@@ -233,7 +233,7 @@ const CarCard: React.FC<CarCardProps> = ({
         {/* Car specs */}
         <div className="text-sm text-primary mb-3">
           <span>
-            {car.year}, {formatMileage(car.mileage)}, {getFuelLabel(car.fuel)}, {car.engine}
+            {car.year}, {formatMileage(car.mileage)}, {getFuelLabel(car.fuel)}, {car.engine}{car.hp ? <span className="whitespace-nowrap"> / {car.hp} л.с.</span> : ''}
           </span>
         </div>
 

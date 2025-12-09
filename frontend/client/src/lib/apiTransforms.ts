@@ -57,9 +57,12 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
   // Обрабатываем фото с использованием новой логики фильтрации и ci.encar.com
   let photos: string[] = [];
 
-  if (apiCar.photo_paths && apiCar.photo_paths.length > 0) {
-    // Преобразуем photo_paths в нужный формат (поддерживаем разные варианты API)
-    const photoPaths: PhotoPath[] = apiCar.photo_paths.map(photo => ({
+  // Поддерживаем оба варианта: photos и photo_paths
+  const photoSource = (apiCar as any).photos || apiCar.photo_paths;
+  
+  if (photoSource && photoSource.length > 0) {
+    // Преобразуем в нужный формат (поддерживаем разные варианты API)
+    const photoPaths: PhotoPath[] = photoSource.map((photo: any) => ({
       code: photo.code || photo.cod,
       path: photo.path
     }));
@@ -138,6 +141,9 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
 
   // Формируем двигатель
   const engine = apiCar.displacement ? `${apiCar.displacement / 1000} л` : '';
+  
+  // Получаем HP из meta
+  const hp = apiCar.hp || 0;
 
   return {
     id: finalId,
@@ -153,6 +159,7 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
     fuel,
     engine,
     displacement: apiCar.displacement,
+    hp,
     location: apiCar.address || 'Не указано',
     photos,
     totalPhotos: photos.length,
@@ -200,6 +207,7 @@ export function transformFiltersToApiParams(filters: Filters, page: number = 1, 
   if (filters.priceTo) params.priceTo = filters.priceTo;
   if (filters.mileageFrom) params.mileageFrom = filters.mileageFrom;
   if (filters.mileageTo) params.mileageTo = filters.mileageTo;
+  if (filters.hpTo) params.hpTo = filters.hpTo;
 
   // Мультиселекты
   if (filters.fuels.length > 0) {

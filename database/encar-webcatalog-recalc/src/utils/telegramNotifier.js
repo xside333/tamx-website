@@ -1,10 +1,11 @@
 import fs from 'fs';
 import axios from 'axios';
 import dotenv from 'dotenv';
-
-dotenv.config();
-
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 const errorsDictionary = JSON.parse(
   fs.readFileSync(path.resolve(path.dirname(new URL(import.meta.url).pathname), 'errorsDictionary.json'))

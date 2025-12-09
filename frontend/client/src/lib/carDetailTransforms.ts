@@ -209,6 +209,12 @@ export function getUtilFee(data: CarDetailData): string {
   const fee = data.current?.usdt?.customs?.utilFee
     ?? data.currentData?.customs?.utilFee
     ?? 0;
+  
+  // Если utilFee = 0, возможно нет HP для расчёта
+  if (fee === 0) {
+    return 'нет л.с. для расчёта';
+  }
+  
   return fee.toLocaleString('ru-RU') + ' ₽';
 }
 
@@ -244,6 +250,15 @@ export function getDeliveryFee(data: CarDetailData, includeDelivery: boolean = f
  * Получить общую сумму
  */
 export function getTotalPrice(data: CarDetailData): string {
+  const utilFee = data.current?.usdt?.customs?.utilFee
+    ?? data.currentData?.customs?.utilFee
+    ?? 0;
+  
+  // Если utilFee = 0 (нет HP), не показываем итоговую сумму
+  if (utilFee === 0) {
+    return 'нет л.с. для расчёта';
+  }
+  
   const total = data.currentData?.total || getFinalPrice(data);
   return total.toLocaleString('ru-RU') + ' ₽';
 }
@@ -268,11 +283,14 @@ export function getExchangeRates(data: CarDetailData) {
  * Удаление дублей по path, сортировка по code, URL преобразование
  */
 export function processDetailPhotos(data: CarDetailData): string[] {
-  const photoPaths = data.meta?.photo_paths || data.photo_paths || [];
+  // Поддерживаем оба варианта: photos и photo_paths
+  const photoSource = (data.meta as any)?.photos || data.meta?.photo_paths || data.photo_paths || [];
 
-  if (!photoPaths || photoPaths.length === 0) {
+  if (!photoSource || photoSource.length === 0) {
     return ['/placeholder.svg'];
   }
+  
+  const photoPaths = photoSource;
 
   // Создаем Map для удаления дубликатов по path
   const uniquePhotos = new Map<string, { code?: string; path: string }>();

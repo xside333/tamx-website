@@ -29,6 +29,7 @@ export interface CatalogParams {
   priceTo?: number;
   mileageFrom?: number;
   mileageTo?: number;
+  hpTo?: number;
 
   // Мультиселекты
   fuelType?: string; // CSV

@@ -15,6 +15,7 @@ export interface Car {
   fuel: string;
   engine: string;
   displacement?: number; // см³
+  hp?: number; // Мощность двигателя (л.с.)
   location: string;
   monthlyPayment?: number;
   photos: string[];
@@ -61,6 +62,7 @@ export interface Filters {
   monthTo?: number;
   mileageFrom?: number;
   mileageTo?: number;
+  hpTo?: number; // Фильтр "до 160 л.с."
 
   // Мультиселекты
   fuels: string[]; // Из constants.ts

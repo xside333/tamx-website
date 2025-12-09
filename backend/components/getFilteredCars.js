@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(process.cwd(), 'keys/.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -15,6 +15,7 @@ export async function getFilteredCars(req, res) {
     yearFrom, monthFrom, yearTo, monthTo,
     priceFrom, priceTo,
     mileageFrom, mileageTo,
+    hpTo,
     fuelType, bodyColor,
     noDamage, category,
     page, sortBy
@@ -56,6 +57,12 @@ export async function getFilteredCars(req, res) {
   if (mileageTo) {
     conditions.push(`mileage <= $${paramIndex++}`);
     params.push(parseInt(mileageTo));
+  }
+
+  // HP до (фильтр "до 160 л.с.")
+  if (hpTo) {
+    conditions.push(`hp > 0 AND hp <= $${paramIndex++}`);
+    params.push(parseInt(hpTo));
   }
 
   // Марка, модель, поколение

@@ -12,8 +12,8 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// .env.production (опционально)
-dotenv.config({ path: path.join(__dirname, '.env.production') });
+// Загружаем .env из папки frontend
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const PORT = process.env.PORT || 8000;
 

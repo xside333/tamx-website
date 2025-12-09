@@ -14,15 +14,15 @@ export async function updateData(calculatedData) {
 
       const values = [];
       const placeholders = batch.map((item, idx) => {
-        const baseIdx = idx * 34;
+        const baseIdx = idx * 36;
         values.push(
           item.id, item.url, item.cartype, item.firstadvertiseddatetime, item.viewcount,
           item.manufacturername, item.manufacturerenglishname, item.modelgroupname, item.modelgroupenglishname,
           item.modelname, item.modelfilter, item.gradename, item.gradeenglishname, item.yearmonth, item.yearmonth_prod,
           item.mileage, item.colorname, item.colorfilter, item.fuelname, item.fuelfilter, item.price, item.vehicleno,
           item.myaccidentcnt, item.myaccidentcost, item.address, JSON.stringify(item.photo_paths), item.seat_count,
-          item.transmission_name, item.trust, item.displacement, item.category,
-          item.totalprice_rub, item.totalprice_usd, JSON.stringify(item.json)
+          item.transmission_name, item.trust, item.displacement, JSON.stringify(item.inspection_outers ?? []), item.category,
+          item.hp ?? 0, item.totalprice_rub, item.totalprice_usd, JSON.stringify(item.json)
         );
         return `(
           $${baseIdx+1}, $${baseIdx+2}, $${baseIdx+3}, $${baseIdx+4}, $${baseIdx+5}, 
@@ -31,7 +31,7 @@ export async function updateData(calculatedData) {
           $${baseIdx+16}, $${baseIdx+17}, $${baseIdx+18}, $${baseIdx+19}, $${baseIdx+20}, 
           $${baseIdx+21}, $${baseIdx+22}, $${baseIdx+23}, $${baseIdx+24}, $${baseIdx+25}, 
           $${baseIdx+26}, $${baseIdx+27}, $${baseIdx+28}, $${baseIdx+29}, $${baseIdx+30},
-          $${baseIdx+31}, $${baseIdx+32}, $${baseIdx+33}, $${baseIdx+34}
+          $${baseIdx+31}, $${baseIdx+32}, $${baseIdx+33}, $${baseIdx+34}, $${baseIdx+35}, $${baseIdx+36}
         )`;
       }).join(',');
 
@@ -41,7 +41,7 @@ export async function updateData(calculatedData) {
           modelgroupname, modelgroupenglishname, modelname, modelfilter, gradename, gradeenglishname, yearmonth,
           yearmonth_prod, mileage, colorname, colorfilter, fuelname, fuelfilter, price, vehicleno, myaccidentcnt,
           myaccidentcost, address, photo_paths, seat_count, transmission_name, trust,
-          displacement, category, totalprice_rub, totalprice_usd, json
+          displacement, inspection_outers, category, hp, totalprice_rub, totalprice_usd, json
         ) VALUES ${placeholders}
         ON CONFLICT (id) DO UPDATE SET
           url = EXCLUDED.url,
@@ -73,7 +73,9 @@ export async function updateData(calculatedData) {
           transmission_name = EXCLUDED.transmission_name,
           trust = EXCLUDED.trust,
           displacement = EXCLUDED.displacement,
+          inspection_outers = EXCLUDED.inspection_outers,
           category = EXCLUDED.category,
+          hp = EXCLUDED.hp,
           totalprice_rub = EXCLUDED.totalprice_rub,
           totalprice_usd = EXCLUDED.totalprice_usd,
           json = EXCLUDED.json,

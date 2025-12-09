@@ -29,6 +29,7 @@ const CarInfo: React.FC<CarInfoProps> = ({ carData }) => {
         <SpecRow label="Пробег:" value={formatMileage(carData.meta?.mileage || 0)} />
         <SpecRow label="Тип топлива:" value={carData.meta?.fuel || 'Не указан'} />
         <SpecRow label="Объем двигателя:" value={getEngineDisplacement(carData)} />
+        <SpecRow label="Мощность двигателя:" value={carData.meta?.hp ? `${carData.meta.hp} л.с.` : 'Не указана'} />
       </div>
     </div>
   );

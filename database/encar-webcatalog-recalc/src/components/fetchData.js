@@ -37,7 +37,7 @@ async function fetchData() {
              manufacturerenglishname, modelgroupname, modelgroupenglishname, modelname,
              gradename, gradeenglishname, yearmonth, yearmonth_prod, mileage, colorname,
              fuelname, price, vehicleno, myaccidentcnt, myaccidentcost, address,
-             photo_paths, seat_count, transmission_name, trust, displacement
+             photo_outer, photo_inner, photo_paths, seat_count, transmission_name, trust, displacement, hp
       FROM encar_db_prod
       ORDER BY firstadvertiseddatetime DESC, id DESC
       OFFSET $1 LIMIT $2;
@@ -68,7 +68,7 @@ async function fetchDataByOffset(offset, limit) {
              manufacturerenglishname, modelgroupname, modelgroupenglishname, modelname,
              gradename, gradeenglishname, yearmonth, yearmonth_prod, mileage, colorname,
              fuelname, price, vehicleno, myaccidentcnt, myaccidentcost, address,
-             photo_paths, seat_count, transmission_name, trust, displacement
+             photo_outer, photo_inner, photo_paths, seat_count, transmission_name, trust, displacement, hp
       FROM encar_db_prod
       ORDER BY firstadvertiseddatetime DESC, id DESC
       OFFSET $1 LIMIT $2;
@@ -92,7 +92,7 @@ async function fetchDataByIds(ids) {
              manufacturerenglishname, modelgroupname, modelgroupenglishname, modelname,
              gradename, gradeenglishname, yearmonth, yearmonth_prod, mileage, colorname,
              fuelname, price, vehicleno, myaccidentcnt, myaccidentcost, address,
-             photo_paths, seat_count, transmission_name, trust, displacement
+             photo_outer, photo_inner, photo_paths, seat_count, transmission_name, trust, displacement, hp
       FROM encar_db_prod
       WHERE id = ANY($1::bigint[])
     `, [ids]);

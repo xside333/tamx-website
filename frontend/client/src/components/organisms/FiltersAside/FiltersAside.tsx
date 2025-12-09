@@ -181,6 +181,10 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
     onFiltersChange({ categories: Array.from(current) });
   };
 
+  const handleLowHpChange = (checked: boolean) => {
+    onFiltersChange({ hpTo: checked ? 160 : undefined });
+  };
+
   const { actionBarRef, containerRef, getActionBarClasses, getContainerClasses } = useStickyFilters();
 
   const isFiltersLoading = loading || filtersLoading;
@@ -403,6 +407,19 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
             />
             <label htmlFor="non-passable" className="text-primary text-sm cursor-pointer">
               Непроходные авто
+            </label>
+          </div>
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              id="low-hp"
+              checked={filters.hpTo === 160}
+              onChange={(e) => handleLowHpChange(e.target.checked)}
+              className="w-5 h-5 text-accent border border-border rounded focus:outline-none accent-accent cursor-pointer"
+              disabled={isFiltersLoading}
+            />
+            <label htmlFor="low-hp" className="text-primary text-sm cursor-pointer">
+              Авто до 160 л.с.
             </label>
           </div>
         </div>
