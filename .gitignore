@@ -13,13 +13,13 @@ database/encar-webcatalog-recalc/logs/
 frontend/production/logs/
 
 # Environment variables (храним в приватном репо для backup)
-# **/.env
-# **/.env.local
-# **/.env.production
-# **/.env.*.local
-# .env
-# .env.local
-# .env.production
+**/.env
+**/.env.local
+**/.env.production
+**/.env.*.local
+.env
+.env.local
+.env.production
 
 # Cache
 **/cacheFiles/
