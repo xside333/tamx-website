@@ -114,6 +114,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ car, carData }) => {
               className="w-full h-full object-cover cursor-pointer"
               loading="eager"
               onClick={() => openLightbox(selectedPhoto)}
+              onError={(e) => {
+                e.currentTarget.src = '/placeholder.svg';
+              }}
             />
             {encarUrl && (
               <button
@@ -141,7 +144,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ car, carData }) => {
                     selectedPhoto === actualIndex ? 'border-accent' : 'border-transparent hover:border-border'
                   )}
                 >
-                  <img src={photo} alt={`Превью ${actualIndex + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={photo} alt={`Превью ${actualIndex + 1}`} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }} />
                   {selectedPhoto !== actualIndex && <div className="absolute inset-0 bg-black/20" />}
                 </button>
               );
@@ -222,6 +225,9 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ car, carData }) => {
                           draggable={false}
                           className="block object-contain mx-auto w-full sm:w-auto"
                           style={{height: 'auto', ...maxImgStyle }}
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder.svg';
+                          }}
                         />
                       {/* Кнопка закрытия — 10px от верхнего/правого края фото */}
                       <button

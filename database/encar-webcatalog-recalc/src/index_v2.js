@@ -78,25 +78,8 @@ async function getRowCountFromDb() {
   }
 }
 
-import fs from 'fs';
-
-// Путь к лог-файлу HP синхронизации
-const HP_LOG_PATH = path.join(__dirname, '..', 'logs', 'hp_sync_log.txt');
-
-// Создаём директорию logs если нет
-const logsDir = path.join(__dirname, '..', 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
-
-/**
- * Логирование HP синхронизации в файл
- */
-function logHpSync(message) {
-  const timestamp = new Date().toISOString();
-  const logLine = `[${timestamp}] ${message}\n`;
-  fs.appendFileSync(HP_LOG_PATH, logLine);
-}
+// Логи HP синхронизации - только в консоль
+// Основные логи HP поиска пишутся в hpSearchService.js → logs/hp_search.log
 
 /**
  * [V3] Синхронизация hp=0 из encar_db_prod с cars_hp_reference_v2
@@ -158,8 +141,7 @@ async function syncZeroHpFromReference() {
         totalSynced++;
         
         // Логируем в файл
-        const logMsg = `SYNC: ID ${car.id} | ${carName} | ref_id=${car.ref_id} | hp: 0 → ${car.ref_hp} (${car.ref_source})`;
-        logHpSync(logMsg);
+        logger(`SYNC: ID ${car.id} | ${carName} | hp: 0 → ${car.ref_hp} (${car.ref_source})`);
       }
       
       logger(`🔄 Батч ${batchNum}: синхронизировано ${batchSynced}/${cars.length} (всего: ${totalSynced})`);
@@ -172,7 +154,6 @@ async function syncZeroHpFromReference() {
     
     if (totalSynced > 0) {
       logger(`✅ HP синхронизация завершена: ${totalSynced} записей обновлено`);
-      logHpSync(`--- ИТОГО: синхронизировано ${totalSynced} записей за ${batchNum} батчей ---`);
     } else {
       logger(`✅ HP синхронизация: нет расхождений`);
     }
@@ -188,52 +169,57 @@ async function syncZeroHpFromReference() {
 }
 
 /**
- * [V3] Обработка авто с hp = null перед пересчётом
+ * [V3] Обработка авто с hp = null/0 перед пересчётом
  * Ищет HP через справочник → pan-auto → OpenAI
+ * Справочник предотвращает повторные API вызовы для уже проверенных фильтров
  */
 async function processNullHpCars() {
   const client = await pool.connect();
   try {
-    logger('🐴 [V3] Поиск HP для авто с hp = NULL...');
+    logger('🐴 [V3] Поиск HP для авто с hp = NULL/0...');
     
-    // Только hp IS NULL — hp=0 означает что мы уже проверяли и не нашли
+    // hp IS NULL или hp = 0 — справочник определит, нужен ли API запрос
     const res = await client.query(`
       SELECT id, cartype, manufacturername, manufacturerenglishname,
              modelgroupname, modelgroupenglishname, modelname,
              gradename, gradeenglishname, yearmonth, fuelname,
              transmission_name, displacement, hp
       FROM encar_db_prod
-      WHERE hp IS NULL
+      WHERE hp IS NULL OR hp = 0
       ORDER BY firstadvertiseddatetime DESC NULLS LAST
       LIMIT 500
     `);
     
     const cars = res.rows;
     if (!cars.length) {
-      logger('✅ Нет авто с hp = NULL');
+      logger('✅ Нет авто с hp = NULL/0');
       return { found: 0, notFound: 0 };
     }
     
-    logger(`🔄 Найдено ${cars.length} авто с hp = NULL. Ищу HP...`);
+    logger(`🔄 Найдено ${cars.length} авто с hp = NULL/0. Ищу HP...`);
     
-    let found = 0, notFound = 0;
+    let foundHp = 0, notFoundHp = 0, skipped = 0;
     
     for (const car of cars) {
       const result = await findAndSetHp(car);
-      if (result.updated) {
-        found++;
+      if (result.skipped) {
+        skipped++;
+      } else if (result.hp > 0) {
+        foundHp++;
       } else {
-        notFound++;
+        notFoundHp++;
       }
       
       // Небольшая пауза каждые 10 авто
-      if ((found + notFound) % 10 === 0) {
+      if ((foundHp + notFoundHp + skipped) % 10 === 0) {
         await new Promise(r => setTimeout(r, 100));
       }
     }
     
-    logger(`✅ HP поиск: найдено ${found}, не найдено ${notFound}`);
-    return { found, notFound };
+    const stats = [`найдено hp: ${foundHp}`, `не найдено: ${notFoundHp}`];
+    if (skipped > 0) stats.push(`пропущено (уже в ref с hp=0): ${skipped}`);
+    logger(`✅ HP поиск: ${stats.join(', ')}`);
+    return { found: foundHp, notFound: notFoundHp, skipped };
     
   } catch (e) {
     logger(`❌ Ошибка HP поиска: ${e.message}`);

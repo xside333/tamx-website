@@ -195,6 +195,8 @@ const CarTitleSection: React.FC<{ car: any; carData: CarDetailData; isFavoriteFn
   const [isPricePopoverOpen, setIsPricePopoverOpen] = useState(false);
   const price = getFinalPrice(carData);
   const title = getCarTitle(carData);
+  const hp = carData.hp ?? carData.meta?.hp ?? 0;
+  const hasHp = hp > 0;
   const location = getCarLocation(carData);
   const mileage = carData.meta?.mileage || 0;
   const isMobile = useMobile();
@@ -236,32 +238,38 @@ const CarTitleSection: React.FC<{ car: any; carData: CarDetailData; isFavoriteFn
         <div className="flex flex-row items-stretch space-x-3 w-full lg:w-auto">
           <div className="text-left lg:text-right relative w-full lg:w-auto">
             <div className="flex items-center justify-start lg:justify-end">
-              <button
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={() => setIsPricePopoverOpen((v) => !v)}
-                className="text-primary text-xl lg:text-[30px] font-bold hover:text-accent transition-colors"
-              >
-                {formatPrice(price)}
-              </button>
-              <button
-                aria-label="Показать расчёт стоимости"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={() => setIsPricePopoverOpen((v) => !v)}
-                className="ml-2 w-6 h-6 bg-surface-secondary rounded-full border border-muted flex items-center justify-center hover:bg-muted transition-colors"
-              >
-                <Icon name="chevronDown" size="sm" className={cn("text-primary transition-transform duration-200", isPricePopoverOpen && "rotate-180")} />
-              </button>
-              <button
-                className="ml-3 text-accent text-sm lg:text-base font-medium whitespace-nowrap hover:underline"
-                role="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const el = document.getElementById('credit-calculator');
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-              >
-                {`от ${formatPrice(computeDefaultMonthlyPayment(price)).replace(' ₽', ' ₽/месяц')}`}
-              </button>
+              {hasHp ? (
+                <>
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => setIsPricePopoverOpen((v) => !v)}
+                    className="text-primary text-xl lg:text-[30px] font-bold hover:text-accent transition-colors"
+                  >
+                    {formatPrice(price)}
+                  </button>
+                  <button
+                    aria-label="Показать расчёт стоимости"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => setIsPricePopoverOpen((v) => !v)}
+                    className="ml-2 w-6 h-6 bg-surface-secondary rounded-full border border-muted flex items-center justify-center hover:bg-muted transition-colors"
+                  >
+                    <Icon name="chevronDown" size="sm" className={cn("text-primary transition-transform duration-200", isPricePopoverOpen && "rotate-180")} />
+                  </button>
+                  <button
+                    className="ml-3 text-accent text-sm lg:text-base font-medium whitespace-nowrap hover:underline"
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const el = document.getElementById('credit-calculator');
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                  >
+                    {`от ${formatPrice(computeDefaultMonthlyPayment(price)).replace(' ₽', ' ₽/месяц')}`}
+                  </button>
+                </>
+              ) : (
+                <span className="text-primary text-xl lg:text-[30px] font-bold">нет л.с.</span>
+              )}
               {!isMobile && (
                 <>
                   {/* divider */}

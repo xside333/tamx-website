@@ -59,9 +59,10 @@ const Hint: React.FC<HintProps> = ({
   return (
     <Tooltip open={isMobile ? open : undefined} delayDuration={delayDuration}>
       <TooltipTrigger asChild>
-        {React.cloneElement(children, {
+        {React.cloneElement(children as React.ReactElement<any>, {
           onClick: (e: React.MouseEvent) => {
-            children.props?.onClick?.(e);
+            const childOnClick = (children as React.ReactElement<any>).props?.onClick;
+            if (childOnClick) childOnClick(e);
             handleTriggerClick(e);
           },
         })}

@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect } from 'react';
-import useEmblaCarousel, { EmblaCarouselType } from 'embla-carousel-react';
+import useEmblaCarousel, { UseEmblaCarouselType } from 'embla-carousel-react';
 import { cn } from '../../../lib/utils';
+
+type EmblaCarouselType = UseEmblaCarouselType[1];
 
 interface MobileGalleryProps {
   photos: string[];
@@ -54,6 +56,9 @@ export const MobileGallery: React.FC<MobileGalleryProps> = ({ photos, selected, 
                   className="w-full h-full object-cover cursor-pointer"
                   onClick={() => onOpenLightbox?.(i)}
                   loading={i === 0 ? 'eager' : 'lazy'}
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder.svg';
+                  }}
                 />
                 {linkUrl && (
                   <button
@@ -88,7 +93,7 @@ export const MobileGallery: React.FC<MobileGalleryProps> = ({ photos, selected, 
                 selected === i ? 'border-accent' : 'border-transparent'
               )}
             >
-              <img src={src} alt={`Миниатюра ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+              <img src={src} alt={`Миниатюра ${i + 1}`} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }} />
             </button>
           ))}
         </div>

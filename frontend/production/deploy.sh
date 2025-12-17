@@ -24,7 +24,7 @@ fi
 
 # Устанавливаем зависимости для сборки
 echo "📦 Installing build dependencies..."
-npm install
+npm install --legacy-peer-deps
 echo "✅ Build dependencies installed."
 
 # Собираем проект с production переменными окружения

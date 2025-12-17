@@ -2,6 +2,8 @@
  * Единая точка входа для всех API запросов с улучшенной обработкой ошибок
  */
 
+import type { ApiCar, FilterOption } from '../types';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // Константы для кэширования
@@ -92,6 +94,7 @@ export interface ApiCarMeta {
   fuel_type?: string;
   fuelname?: string;
   displacement?: number;
+  hp?: number; // Мощность двигателя (л.с.)
   year?: number;
   month?: number;
   colorname?: string;
@@ -114,59 +117,11 @@ export interface ApiCarMeta {
   };
 }
 
-export interface ApiCar {
-  // Основные поля
-  car_id?: string;
-  id?: string;
-  manufacturerenglishname?: string;
-  modelgroupenglishname?: string;
-  gradeenglishname?: string;
-  price?: number;
-  
-  // Техданные
-  fuel_type?: string;
-  fuelname?: string;
-  displacement?: number; // см³
-  
-  // Дата/цвет/пробег
-  year?: number;
-  month?: number;
-  yearmonth?: string;
-  firstadvertiseddatetime?: string;
-  color?: string;
-  colorname?: string;
-  mileage?: number;
-  
-  // Повреждения
-  myaccidentcnt?: number;
-  myaccidentcost?: number;
-  
-  // Фото
-  photo_paths?: Array<{
-    code: '001' | '003' | '004' | '007';
-    path: string;
-  }>;
-  photo_outer?: string; // альтернативное фото
-  
-  // Бейджи (опционально)
-  current?: {
-    usdt?: {
-      customs?: {
-        category?: 'rate_5_plus' | 'rate_0_3' | 'rate_3_5';
-      };
-    };
-  };
-  simulated?: {
-    usdt?: {
-      total?: number;
-    };
-    monthsToPass?: number;
-  };
-}
+// ApiCar и FilterOption импортированы из types/index.ts
 
-export interface FilterOption {
-  value: string;
-  label: string;
+export interface CarData {
+  car_id?: string;
+  meta?: ApiCarMeta;
 }
 
 // Интерфейс для вложенной структуры фильтров от нового API

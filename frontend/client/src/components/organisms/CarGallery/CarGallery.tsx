@@ -120,6 +120,9 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
                   alt={`${car.manufacturerenglishname} ${car.modelgroupenglishname} - фото ${index + 1}`}
                   className="w-full h-full object-cover transition-transform duration-200 hover:scale-105"
                   loading={index === 0 ? 'eager' : 'lazy'}
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder.svg';
+                  }}
                 />
                 
                 {/* Иконка зума */}
@@ -181,6 +184,9 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
                   alt={`Превью ${index + 1}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder.svg';
+                  }}
                 />
                 {selectedImageIndex !== index && (
                   <div className="absolute inset-0 bg-black/20" />
@@ -206,6 +212,9 @@ export const CarGallery: React.FC<CarGalleryProps> = ({
               src={images[selectedImageIndex]}
               alt={`${car.manufacturerenglishname} ${car.modelgroupenglishname} - фото ${selectedImageIndex + 1}`}
               className="max-w-full max-h-full object-contain"
+              onError={(e) => {
+                e.currentTarget.src = '/placeholder.svg';
+              }}
             />
             
             {/* Кнопка закрытия */}

@@ -151,7 +151,7 @@ export async function getFilteredCars(req, res) {
   }
 
   const query = `
-    SELECT json FROM encar_webcatalog
+    SELECT json, hp FROM encar_webcatalog
     ${whereClause}
     ${orderClause}
     LIMIT ${limit} OFFSET ${offset};
@@ -170,7 +170,11 @@ export async function getFilteredCars(req, res) {
     client.release();
 
     const totalcars = parseInt(totalCountResult.rows[0].count, 10);
-    const cars = rows.map(row => row.json);
+    // Добавляем hp из колонки в каждый json
+    const cars = rows.map(row => ({
+      ...row.json,
+      hp: row.hp ?? 0
+    }));
 
     res.json({ totalcars, cars });
   } catch (error) {

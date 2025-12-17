@@ -15,7 +15,7 @@ export async function heroCard(req, res) {
 
     // Основной запрос с условием по дате и trust
     const query = `
-      SELECT json FROM encar_webcatalog
+      SELECT json, hp FROM encar_webcatalog
       WHERE trust != '1'
         AND firstadvertiseddatetime >= NOW() - INTERVAL '1 day'
       ORDER BY (yearmonth::int >= 202201) DESC, firstadvertiseddatetime DESC
@@ -27,7 +27,7 @@ export async function heroCard(req, res) {
     // Если нет подходящих объявлений, fallback-запрос без даты
     if (rows.length === 0) {
       const fallbackQuery = `
-        SELECT json FROM encar_webcatalog
+        SELECT json, hp FROM encar_webcatalog
         WHERE trust != '1'
         ORDER BY (yearmonth::int >= 202201) DESC, firstadvertiseddatetime DESC
         LIMIT 1;
@@ -44,7 +44,12 @@ export async function heroCard(req, res) {
     client.release();
 
     if (rows.length > 0) {
-      res.json({ totalcars, json: rows[0].json });
+      // Добавляем hp из колонки в json
+      const carData = {
+        ...rows[0].json,
+        hp: rows[0].hp ?? 0
+      };
+      res.json({ totalcars, json: carData });
     } else {
       res.status(404).json({ error: 'Нет подходящих объявлений.', totalcars });
     }

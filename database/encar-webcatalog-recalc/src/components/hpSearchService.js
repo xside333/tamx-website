@@ -8,11 +8,14 @@
  */
 
 import { pool } from '../utils/dbClient.js';
-import { logger } from '../utils/logger.js';
+import { logHpSearch } from '../lib/hpLogger.js';
 
 // Импорт функций HP поиска
 import { getHpFromPanAuto } from '../lib/panAutoApi.js';
 import { searchHpInOpenAI } from '../lib/openaiApi.js';
+
+// Простой консольный лог (не пишет в файл)
+const log = (msg) => console.log(`[HP] ${msg}`);
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -102,7 +105,7 @@ async function lookupHpInReference(filter) {
     }
     return { hp: null, source: null, found: false, existsInRef: false };
   } catch (error) {
-    logger(`⚠️ HP reference lookup error: ${error.message}`);
+    log(`⚠️ HP reference lookup error: ${error.message}`);
     return { hp: null, source: null, found: false, existsInRef: false };
   }
 }
@@ -169,21 +172,50 @@ async function saveHpToReference(filter, hp, source, marker, description) {
     }
     return true;
   } catch (error) {
-    logger(`⚠️ HP reference save error: ${error.message}`);
+    log(`⚠️ HP reference save error: ${error.message}`);
     return false;
   }
 }
 
 /**
- * Обновить HP в encar_db_prod
+ * Обновить HP в encar_db_prod для ВСЕХ авто с таким же фильтром
  */
-async function updateHpInProd(carId, hp) {
+async function updateHpInProdByFilter(filter, hp) {
   try {
-    await pool.query(`UPDATE encar_db_prod SET hp = $1 WHERE id = $2`, [hp, carId]);
-    return true;
+    const result = await pool.query(`
+      UPDATE encar_db_prod
+      SET hp = $1
+      WHERE cartype = $2
+        AND manufacturerenglishname = $3
+        AND modelgroupenglishname = $4
+        AND modelname = $5
+        AND COALESCE(gradeenglishname, '') = COALESCE($6, '')
+        AND FLOOR(yearmonth::integer / 100)::integer = $7
+        AND fuelname = $8
+        AND COALESCE(transmission_name, '') = COALESCE($9, '')
+        AND COALESCE(displacement, 0) = COALESCE($10, 0)
+        AND (hp IS NULL OR hp = 0)
+    `, [
+      hp,
+      filter.cartype,
+      filter.manufacturerenglishname,
+      filter.modelgroupenglishname,
+      filter.modelname,
+      filter.gradeenglishname || '',
+      filter.year || 0,
+      filter.fuelname,
+      filter.transmission_name || '',
+      filter.displacement || 0
+    ]);
+    
+    if (result.rowCount > 1) {
+      log(`   💫 Обновлено ${result.rowCount} авто с таким же фильтром`);
+    }
+    
+    return result.rowCount;
   } catch (error) {
-    logger(`⚠️ HP prod update error: ${error.message}`);
-    return false;
+    log(`⚠️ HP prod batch update error: ${error.message}`);
+    return 0;
   }
 }
 
@@ -253,24 +285,26 @@ export async function findAndSetHp(car) {
   // Если запись УЖЕ существует в справочнике — используем её (даже hp=0)
   // Это экономит API запросы — мы уже проверяли этот фильтр ранее
   if (ref.existsInRef) {
-    await updateHpInProd(car.id, ref.hp);
     if (ref.hp > 0) {
-      return { hp: ref.hp, source: `reference:${ref.source}`, updated: true };
+      // HP найден в справочнике — обновляем prod
+      const updatedCount = await updateHpInProdByFilter(filter, ref.hp);
+      return { hp: ref.hp, source: `reference:${ref.source}`, updated: true, batchCount: updatedCount };
     } else {
-      // hp=0 в справочнике — значит мы уже искали и не нашли
-      return { hp: 0, source: 'reference:notfound', updated: true };
+      // hp=0 в справочнике — уже искали и не нашли, НЕ обновляем (0→0 бесполезно)
+      return { hp: 0, source: 'reference:notfound', updated: false, skipped: true };
     }
   }
   
   // 2. Проверка на "Others/기타" — пропускаем API поиск, сразу hp=0
   if (shouldSkipHpSearch(filter)) {
-    logger(`⏭️ HP skip (Others/기타): ${filterName}`);
+    logHpSearch('skipped', filter, 0, 'Others/기타');
     await saveHpToReference(filter, 0, 'skipped', 'Others/기타', 'Generic category - HP search skipped');
-    await updateHpInProd(car.id, 0);
-    return { hp: 0, source: 'skipped:others', updated: true };
+    const updatedCount = await updateHpInProdByFilter(filter, 0);
+    return { hp: 0, source: 'skipped:others', updated: true, batchCount: updatedCount };
   }
   
   // 3. Запись НЕ существует в справочнике — ищем через pan-auto
+  log(`🔍 Searching HP for: ${filterName}`);
   const carIds = await getCarIdsForPanAuto(filter, 5);
   
   for (const carId of carIds) {
@@ -278,30 +312,35 @@ export async function findAndSetHp(car) {
     if (panResult.hp && panResult.hp > 0) {
       // Сохраняем в справочник
       await saveHpToReference(filter, panResult.hp, 'pan-auto', 'Точно', `Found via pan-auto carId ${carId}`);
-      // Обновляем encar_db_prod
-      await updateHpInProd(car.id, panResult.hp);
-      logger(`🐴 HP pan-auto: ${filterName} => ${panResult.hp}`);
-      return { hp: panResult.hp, source: 'pan-auto', updated: true };
+      // Обновляем ВСЕ авто с таким же фильтром
+      const updatedCount = await updateHpInProdByFilter(filter, panResult.hp);
+      // ЛОГИРУЕМ в файл
+      logHpSearch('pan-auto', filter, panResult.hp, `carId: ${carId}`);
+      return { hp: panResult.hp, source: 'pan-auto', updated: true, batchCount: updatedCount };
     }
     await sleep(200);
   }
   
-  // 4. Ищем через OpenAI
+  // 4. Ищем через OpenAI (вызывается ВСЕГДА если не нашли в pan-auto)
+  log(`🤖 OpenAI search for: ${filterName}`);
   const openaiResult = await searchHpInOpenAI(filter);
+  
   if (openaiResult.hp && openaiResult.hp > 0) {
     // Сохраняем в справочник
     await saveHpToReference(filter, openaiResult.hp, 'openai', openaiResult.marker, openaiResult.description);
-    // Обновляем encar_db_prod
-    await updateHpInProd(car.id, openaiResult.hp);
-    logger(`🤖 HP OpenAI: ${filterName} => ${openaiResult.hp}`);
-    return { hp: openaiResult.hp, source: 'openai', updated: true };
+    // Обновляем ВСЕ авто с таким же фильтром
+    const updatedCount = await updateHpInProdByFilter(filter, openaiResult.hp);
+    // ЛОГИРУЕМ в файл
+    logHpSearch('openai', filter, openaiResult.hp, openaiResult.marker);
+    return { hp: openaiResult.hp, source: 'openai', updated: true, batchCount: updatedCount };
   }
   
   // 5. Не нашли нигде — сохраняем hp=0 в справочник, чтобы не повторять поиск
   await saveHpToReference(filter, 0, 'notfound', 'Не найдено', 'HP not found via pan-auto and OpenAI');
-  await updateHpInProd(car.id, 0);
-  logger(`❌ HP not found: ${filterName} (saved hp=0 to reference)`);
-  return { hp: 0, source: 'notfound', updated: true };
+  const updatedCount = await updateHpInProdByFilter(filter, 0);
+  // ЛОГИРУЕМ в файл
+  logHpSearch('notfound', filter, 0);
+  return { hp: 0, source: 'notfound', updated: true, batchCount: updatedCount };
 }
 
 /**

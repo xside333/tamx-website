@@ -10,6 +10,7 @@ export interface CarDetailData {
   // Таможенный статус
   rate?: 'rate_3_5' | 'rate_5_plus' | 'rate_0_3' | string;
   monthsToPath?: number | null;
+  hp?: number; // Мощность двигателя (л.с.) - для проверки наличия HP
   meta?: {
     photo_paths?: Array<{ code?: string; cod?: string; path: string }>;
     manufacturerenglishname?: string;
@@ -25,6 +26,7 @@ export interface CarDetailData {
     color?: string;
     displacement?: number;
     myaccidentcost?: number;
+    hp?: number; // Мощность двигателя (л.с.)
   };
   current?: {
     usdt?: {
@@ -203,17 +205,25 @@ export function getCustomsDuty(data: CarDetailData): string {
 }
 
 /**
+ * Получить HP из данных
+ */
+export function getHp(data: CarDetailData): number {
+  return data.hp ?? data.meta?.hp ?? 0;
+}
+
+/**
  * Получить утилизационный сбор
  */
 export function getUtilFee(data: CarDetailData): string {
+  // Проверяем HP напрямую
+  const hp = getHp(data);
+  if (!hp || hp === 0) {
+    return 'нет л.с.';
+  }
+  
   const fee = data.current?.usdt?.customs?.utilFee
     ?? data.currentData?.customs?.utilFee
     ?? 0;
-  
-  // Если utilFee = 0, возможно нет HP для расчёта
-  if (fee === 0) {
-    return 'нет л.с. для расчёта';
-  }
   
   return fee.toLocaleString('ru-RU') + ' ₽';
 }
@@ -250,13 +260,10 @@ export function getDeliveryFee(data: CarDetailData, includeDelivery: boolean = f
  * Получить общую сумму
  */
 export function getTotalPrice(data: CarDetailData): string {
-  const utilFee = data.current?.usdt?.customs?.utilFee
-    ?? data.currentData?.customs?.utilFee
-    ?? 0;
-  
-  // Если utilFee = 0 (нет HP), не показываем итоговую сумму
-  if (utilFee === 0) {
-    return 'нет л.с. для расчёта';
+  // Проверяем HP напрямую
+  const hp = getHp(data);
+  if (!hp || hp === 0) {
+    return 'нет л.с.';
   }
   
   const total = data.currentData?.total || getFinalPrice(data);

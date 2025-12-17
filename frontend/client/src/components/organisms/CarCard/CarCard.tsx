@@ -121,6 +121,9 @@ const CarCard: React.FC<CarCardProps> = ({
             alt={car.name}
             className="w-full h-[234px] object-cover rounded-xl"
             loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = '/placeholder.svg';
+            }}
           />
 
           {/* Desktop overlays - positioned over the image as before */}
@@ -158,6 +161,9 @@ const CarCard: React.FC<CarCardProps> = ({
                     alt={`${car.name} - фото ${index + 1}`}
                     className="w-full h-[234px] object-cover rounded-xl"
                     loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder.svg';
+                    }}
                   />
 
                   {/* Overlay for "More photos" on last slide */}
@@ -220,7 +226,9 @@ const CarCard: React.FC<CarCardProps> = ({
 
         {/* Price and Buy button */}
         <div className="flex items-center justify-between mb-2 gap-3">
-          <div className="text-primary font-bold text-lg">{formatPrice(car.price)}</div>
+          <div className="text-primary font-bold text-lg">
+            {car.hp && car.hp > 0 ? formatPrice(car.price) : 'нет л.с.'}
+          </div>
           <Button
             variant="primary"
             className="h-[36px] px-4 py-2"
@@ -239,15 +247,19 @@ const CarCard: React.FC<CarCardProps> = ({
 
         {/* Credit offer (left bottom) */}
         <div className="mt-1">
-          <a
-            href={`/car/${car.id}#credit`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent text-sm font-medium hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            В кредит от {formatPrice(monthlyPayment)}/мес.
-          </a>
+          {car.hp && car.hp > 0 ? (
+            <a
+              href={`/car/${car.id}#credit`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent text-sm font-medium hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              В кредит от {formatPrice(monthlyPayment)}/мес.
+            </a>
+          ) : (
+            <span className="text-secondary text-sm">нет л.с.</span>
+          )}
         </div>
       </div>
       {/* Lead modal */}

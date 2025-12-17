@@ -1,55 +1,81 @@
-// lib/hpLogger.js - логирование для HP поиска
+// lib/hpLogger.js - логирование HP поиска (pan-auto/OpenAI)
+// Единственный файл: hp_search.log
+// Время: Seoul (UTC+9)
+
 import fs from 'fs';
 import path from 'path';
-import { config } from './hpConfig.js';
+import { fileURLToPath } from 'url';
 
-const logsDir = config.paths.logsDir;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOGS_DIR = path.join(__dirname, '..', '..', 'logs');
+const LOG_FILE = path.join(LOGS_DIR, 'hp_search.log');
 
-// Создаём папку логов, если не существует
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
+// Создаём папку логов если нет
+if (!fs.existsSync(LOGS_DIR)) {
+  fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
 
-function getTimestamp() {
-  return new Date().toISOString();
+/**
+ * Получить текущее время в сеульском формате (UTC+9)
+ */
+function getSeoulTime() {
+  return new Date().toLocaleString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).replace(/\. /g, '-').replace('.', '');
 }
 
-function formatMessage(level, message, meta = {}) {
-  const metaStr = Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
-  return `[${getTimestamp()}] [${level}] ${message}${metaStr}`;
+/**
+ * Записать лог поиска HP (только для новых фильтров)
+ * @param {string} source - 'pan-auto' | 'openai' | 'notfound' | 'skipped'
+ * @param {Object} filter - фильтр авто
+ * @param {number} hp - найденная мощность
+ * @param {string} [extra] - дополнительная информация
+ */
+export function logHpSearch(source, filter, hp, extra = '') {
+  const time = getSeoulTime();
+  const filterName = `${filter.manufacturerenglishname || ''} ${filter.modelgroupenglishname || ''} ${filter.modelname || ''} ${filter.gradeenglishname || ''} (${filter.year || ''})`.trim();
+  const displacement = filter.displacement || 0;
+  const fuel = filter.fuelname || '';
+  
+  let icon = '❓';
+  if (source === 'pan-auto') icon = '🐴';
+  else if (source === 'openai') icon = '🤖';
+  else if (source === 'notfound') icon = '❌';
+  else if (source === 'skipped') icon = '⏭️';
+  
+  const line = `[${time}] ${icon} ${source.toUpperCase()} | ${filterName} | ${displacement}cc ${fuel} | HP: ${hp}${extra ? ' | ' + extra : ''}`;
+  
+  // Пишем в файл
+  fs.appendFileSync(LOG_FILE, line + '\n');
+  
+  // Также выводим в консоль
+  console.log(line);
 }
 
-function writeToFile(filename, message) {
-  const logPath = path.join(logsDir, filename);
-  fs.appendFileSync(logPath, message + '\n');
-}
-
+/**
+ * Простой консольный логгер (не пишет в файл)
+ */
 export const logger = {
-  info(message, meta = {}) {
-    const formatted = formatMessage('INFO', message, meta);
-    console.log(formatted);
-    writeToFile('hp-worker.log', formatted);
+  info(message) {
+    console.log(`[${getSeoulTime()}] [INFO] ${message}`);
   },
-  
-  warn(message, meta = {}) {
-    const formatted = formatMessage('WARN', message, meta);
-    console.warn(formatted);
-    writeToFile('hp-worker.log', formatted);
+  warn(message) {
+    console.warn(`[${getSeoulTime()}] [WARN] ${message}`);
   },
-  
-  error(message, meta = {}) {
-    const formatted = formatMessage('ERROR', message, meta);
-    console.error(formatted);
-    writeToFile('hp-worker.log', formatted);
-    writeToFile('hp-worker-errors.log', formatted);
+  error(message) {
+    console.error(`[${getSeoulTime()}] [ERROR] ${message}`);
   },
-  
-  debug(message, meta = {}) {
-    if (process.env.DEBUG === 'true') {
-      const formatted = formatMessage('DEBUG', message, meta);
-      console.log(formatted);
-      writeToFile('hp-worker-debug.log', formatted);
+  debug(message) {
+    // Debug сообщения только в консоль (не в файл)
+    if (process.env.DEBUG_HP) {
+      console.log(`[${getSeoulTime()}] [DEBUG] ${message}`);
     }
   }
 };
-

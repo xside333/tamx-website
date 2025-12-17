@@ -18,7 +18,7 @@ export const getCarDetails = async (req, res) => {
 
   try {
     const { rows } = await pool.query(
-      'SELECT json FROM encar_webcatalog WHERE id = $1',
+      'SELECT json, hp FROM encar_webcatalog WHERE id = $1',
       [id]
     );
 
@@ -26,7 +26,13 @@ export const getCarDetails = async (req, res) => {
       return res.status(404).json({ error: 'Автомобиль не найден' });
     }
 
-    res.json(rows[0].json);
+    // Добавляем hp из колонки в ответ (для проверки "нет л.с.")
+    const result = {
+      ...rows[0].json,
+      hp: rows[0].hp ?? 0
+    };
+
+    res.json(result);
   } catch (error) {
     console.error('Ошибка при запросе к БД:', error);
     res.status(500).json({ error: 'Ошибка сервера' });

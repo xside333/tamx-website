@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { CarData } from '@/lib/api';
+import type { CarData } from '../lib/api';
 
 const API_BASE_URL = 'https://api.tarasov-auto.online';
 const BASE_UTIL_FEE = 20000;

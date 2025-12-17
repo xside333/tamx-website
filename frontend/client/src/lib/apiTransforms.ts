@@ -1,9 +1,9 @@
 /**
  * Утилиты для преобразования данных между API и UI форматами
  */
-import { ApiCar, Car, Filters, CatalogParams } from '../types';
+import { ApiCar, Car, Filters } from '../types';
 import { StatusType } from '../types';
-import { ApiCarWrapper, ApiCarMeta } from './api';
+import { ApiCarWrapper, ApiCarMeta, CatalogParams } from './api';
 import { filterAndSortCatalogPhotos, PhotoPath } from './photoUtils';
 
 /**
@@ -142,8 +142,8 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
   // Формируем двигатель
   const engine = apiCar.displacement ? `${apiCar.displacement / 1000} л` : '';
   
-  // Получаем HP из meta
-  const hp = apiCar.hp || 0;
+  // Получаем HP из root level (от backend) или из meta
+  const hp = (apiCarWrapper as any).hp ?? apiCar.hp ?? 0;
 
   return {
     id: finalId,

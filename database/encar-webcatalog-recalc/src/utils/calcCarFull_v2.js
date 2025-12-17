@@ -124,9 +124,7 @@ export function calcCarFull(car, customsRates, utilRates, utilDecember2025, exch
     }
 
     const priceRUBforFee = priceKRW * krwRub;
-    const customsClearance = customsFee.find(fee =>
-      priceRUBforFee > fee.price_min && priceRUBforFee <= fee.price_max
-    )?.rate_rub ?? 10000;
+    const customsClearance = 100000;
 
     let duty = 0;
     if (customsRate.mode === "eur") {

@@ -1,11 +1,16 @@
-// Порядковый номер 0007.000 — carApi_v2.js
-// Версия с интеграцией HP lookup из cars_hp_reference_v2
+// Порядковый номер 0007.001 — carApi_v2.js
+// Версия с ПОЛНОЙ интеграцией HP поиска: reference → pan-auto → OpenAI
 import express from 'express';
 import cors from 'cors';
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+// Импорт функций HP поиска из encar-webcatalog-recalc
+import { getHpFromPanAuto } from '../encar-webcatalog-recalc/src/lib/panAutoApi.js';
+import { searchHpInOpenAI } from '../encar-webcatalog-recalc/src/lib/openaiApi.js';
+import { logHpSearch } from '../encar-webcatalog-recalc/src/lib/hpLogger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -64,22 +69,21 @@ function shouldSkipHpSearch(car) {
 }
 
 /**
- * Поиск HP в справочнике cars_hp_reference_v2
+ * Поиск/создание HP в справочнике cars_hp_reference_v2
+ * Если фильтр не найден — СОЗДАЁМ запись и ИЩЕМ HP через pan-auto/OpenAI
  * @param {Object} car - объект машины
  * @returns {Promise<{hp: number|null, isNew: boolean, skipped: boolean}>}
  */
 async function lookupHpFromReference(car) {
   const mb = car?.main?.base;
   
-  // Проверка на "Others/기타" — пропускаем поиск, сразу hp=0
-  if (shouldSkipHpSearch(car)) {
-    return { hp: 0, isNew: false, skipped: true };
-  }
-  
   const cartype = car?.carType || null;
   const manufacturerenglishname = mb?.category?.manufacturerEnglishName || null;
+  const manufacturername = mb?.category?.manufacturerName || manufacturerenglishname;
   const modelgroupenglishname = mb?.category?.modelGroupEnglishName || null;
+  const modelgroupname = mb?.category?.modelGroupName || modelgroupenglishname;
   const modelname = mb?.category?.modelName || null;
+  const gradename = mb?.category?.gradeName || null;
   const gradeenglishname = mb?.category?.gradeEnglishName || null;
   const fuelname = mb?.spec?.fuelName || null;
   const yearmonth = mb?.category?.yearMonth;
@@ -87,13 +91,33 @@ async function lookupHpFromReference(car) {
   const transmission_name = mb?.spec?.transmissionName || null;
   const displacement = mb?.spec?.displacement || 0;
   
+  // Проверка на "Others/기타" — создаём запись с hp=0, без API вызовов
+  if (shouldSkipHpSearch(car)) {
+    const skipFilter = {
+      cartype, manufacturername, manufacturerenglishname, modelgroupname, modelgroupenglishname,
+      modelname, gradename, gradeenglishname, year, fuelname, transmission_name, displacement
+    };
+    await createReferenceRecord({
+      ...skipFilter, hp: 0, source: 'skipped', marker: 'Others/기타',
+      description: 'Generic category - HP search skipped', id_sample: car?.id
+    });
+    logHpSearch('skipped', skipFilter, 0, 'Others/기타');
+    return { hp: 0, isNew: false, skipped: true };
+  }
+  
   // Проверяем обязательные поля
   if (!cartype || !manufacturerenglishname || !modelgroupenglishname || !modelname || !fuelname) {
     return { hp: null, isNew: false, skipped: false };
   }
   
+  const filter = {
+    id: car?.id,
+    cartype, manufacturername, manufacturerenglishname, modelgroupname, modelgroupenglishname,
+    modelname, gradename, gradeenglishname, year, fuelname, transmission_name, displacement
+  };
+  
   try {
-    // Ищем в справочнике
+    // 1. Ищем в справочнике
     const result = await pool.query(`
       SELECT hp, status
       FROM cars_hp_reference_v2
@@ -108,31 +132,78 @@ async function lookupHpFromReference(car) {
         AND COALESCE(displacement, 0) = COALESCE($9, 0)
       LIMIT 1
     `, [
-      cartype,
-      manufacturerenglishname,
-      modelgroupenglishname,
-      modelname,
-      gradeenglishname || '',
-      year || 0,
-      fuelname,
-      transmission_name || '',
-      displacement || 0
+      cartype, manufacturerenglishname, modelgroupenglishname, modelname,
+      gradeenglishname || '', year || 0, fuelname, transmission_name || '', displacement || 0
     ]);
     
     if (result.rows.length > 0) {
-      const row = result.rows[0];
-      // Если запись существует — берём HP (даже 0)
-      const hp = row.hp != null ? row.hp : null;
+      // Запись существует — берём HP (даже 0)
+      const hp = result.rows[0].hp ?? 0;
       return { hp, isNew: false, skipped: false };
     }
     
-    // Не нашли в справочнике — возвращаем null
-    // encar-recalc-v3 найдёт HP через pan-auto/OpenAI и создаст запись
-    return { hp: null, isNew: true, skipped: false };
+    // 2. Не нашли в справочнике → ИЩЕМ HP
+    console.log(`🔍 [Parser] New filter: ${manufacturerenglishname} ${modelgroupenglishname} ${modelname} (${year})`);
+    
+    // 2a. Пробуем pan-auto
+    const panResult = await getHpFromPanAuto(car?.id);
+    if (panResult?.hp && panResult.hp > 0) {
+      await createReferenceRecord({
+        ...filter, hp: panResult.hp, source: 'pan-auto', marker: 'Точно',
+        description: `Found via pan-auto carId ${car?.id}`, id_sample: car?.id
+      });
+      logHpSearch('pan-auto', filter, panResult.hp, `carId: ${car?.id}`);
+      return { hp: panResult.hp, isNew: true, skipped: false };
+    }
+    
+    // 2b. Пробуем OpenAI
+    const openaiResult = await searchHpInOpenAI(filter);
+    if (openaiResult?.hp && openaiResult.hp > 0) {
+      await createReferenceRecord({
+        ...filter, hp: openaiResult.hp, source: 'openai', marker: openaiResult.marker,
+        description: openaiResult.description, id_sample: car?.id
+      });
+      logHpSearch('openai', filter, openaiResult.hp, openaiResult.marker);
+      return { hp: openaiResult.hp, isNew: true, skipped: false };
+    }
+    
+    // 3. Не нашли нигде — сохраняем hp=0
+    await createReferenceRecord({
+      ...filter, hp: 0, source: 'notfound', marker: 'Не найдено',
+      description: 'HP not found via pan-auto and OpenAI', id_sample: car?.id
+    });
+    logHpSearch('notfound', filter, 0);
+    return { hp: 0, isNew: true, skipped: false };
     
   } catch (error) {
     console.warn('⚠️ HP lookup error:', error?.message);
     return { hp: null, isNew: false, skipped: false };
+  }
+}
+
+/**
+ * Создать запись в cars_hp_reference_v2
+ */
+async function createReferenceRecord(data) {
+  try {
+    await pool.query(`
+      INSERT INTO cars_hp_reference_v2 (
+        cartype, manufacturername, manufacturerenglishname,
+        modelgroupname, modelgroupenglishname, modelname,
+        gradename, gradeenglishname, year, fuelname,
+        transmission_name, displacement, hp, source, marker,
+        description, status, id_sample
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'done', $17)
+      ON CONFLICT DO NOTHING
+    `, [
+      data.cartype, data.manufacturername, data.manufacturerenglishname,
+      data.modelgroupname, data.modelgroupenglishname, data.modelname,
+      data.gradename, data.gradeenglishname, data.year, data.fuelname,
+      data.transmission_name, data.displacement, data.hp, data.source,
+      data.marker, data.description, data.id_sample
+    ]);
+  } catch (error) {
+    console.warn('⚠️ Reference record insert error:', error?.message);
   }
 }
 

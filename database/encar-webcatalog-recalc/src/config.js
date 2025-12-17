@@ -4,7 +4,6 @@ export const config = {
   insertBatchSize: 50,
   recalculationIntervalMinutes: 50,
   syncIntervalMinutes: 2,
-  logFilePath: './logs/run.log',
   maxLogRecords: 350,
   vacuumAnalyzeInterval: 24 // примерно раз в сутки
 };

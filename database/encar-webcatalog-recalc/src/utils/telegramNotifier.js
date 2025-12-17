@@ -13,11 +13,9 @@ const errorsDictionary = JSON.parse(
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const LOG_FILE = './logs/telegram.log';
 
 function logTelegram(message) {
-  const logMessage = `[${new Date().toISOString()}] ${message}\n`;
-  fs.appendFileSync(LOG_FILE, logMessage);
+  console.log(`[Telegram] ${message}`);
 }
 
 async function send(errorKey) {

@@ -83,6 +83,7 @@ export type FiltersPatch = Partial<Filters>;
 export interface FilterOption {
   value: string;
   label: string;
+  count?: number;
 }
 
 export interface FilterGroup {
@@ -182,7 +183,7 @@ export interface ButtonProps extends BaseComponentProps {
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
   type?: 'button' | 'submit' | 'reset';
 }
 
@@ -191,10 +192,16 @@ export interface InputProps extends BaseComponentProps {
   placeholder?: string;
   value?: string | number;
   onChange?: (value: string) => void;
+  onFocus?: React.FocusEventHandler<HTMLInputElement>;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   disabled?: boolean;
   error?: string;
   id?: string;
   name?: string;
+  min?: number;
+  max?: number;
+  step?: string;
+  inputMode?: "search" | "text" | "none" | "tel" | "url" | "email" | "numeric" | "decimal";
 }
 
 export interface SelectProps extends BaseComponentProps {
@@ -271,11 +278,13 @@ export interface ApiCar {
   fuel_type?: string;
   fuelname?: string;
   displacement?: number; // см³
+  hp?: number; // Мощность двигателя (л.с.)
 
   // Дата/цвет/пробег
   year?: number;
   month?: number;
   yearmonth?: string;
+  firstadvertiseddatetime?: string;
   color?: string;
   colorname?: string;
   mileage?: number;
@@ -286,7 +295,8 @@ export interface ApiCar {
 
   // Фото
   photo_paths?: Array<{
-    code: '001' | '003' | '004' | '007';
+    code?: string;
+    cod?: string;
     path: string;
   }>;
   photo_outer?: string; // альтернативное фото
@@ -309,4 +319,4 @@ export interface ApiCar {
 }
 
 // Utility Types
-export { FuelType, BodyColor };
+export type { FuelType, BodyColor };

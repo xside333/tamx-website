@@ -34,10 +34,10 @@ import os from 'os';
       const batchRows = await fetchDataByOffset(offset + processed, Math.min(fetchBatchSize, limit - processed));
       if (!batchRows.length) break;
 
-      // [HP] Ищем HP для авто с hp=null (новые авто пришедшие во время цикла)
-      const nullHpRows = batchRows.filter(r => r.hp === null || r.hp === undefined);
+      // [HP] Ищем HP для авто с hp=null/0 (новые авто пришедшие во время цикла)
+      const nullHpRows = batchRows.filter(r => !r.hp || r.hp === 0);
       if (nullHpRows.length > 0) {
-        logger && logger(`🐴 Воркер: найдено ${nullHpRows.length} авто с hp=null, ищу HP...`);
+        logger && logger(`🐴 Воркер: найдено ${nullHpRows.length} авто с hp=null/0, ищу HP...`);
         for (const row of nullHpRows) {
           const result = await findAndSetHp(row);
           row.hp = result.hp; // Обновляем hp для расчётов
