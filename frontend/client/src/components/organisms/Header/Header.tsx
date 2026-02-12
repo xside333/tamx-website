@@ -11,14 +11,15 @@ interface HeaderProps extends BaseComponentProps {
 
 const defaultNavItems: NavItem[] = [
   { label: 'Каталог', href: '/catalog' },
-  { label: 'Наш подход', href: 'https://tarasov-auto.ru/approach', external: true },
-  { label: 'Опции', href: 'https://tarasov-auto.ru/options', external: true },
-  { label: 'О компании', href: 'https://tarasov-auto.ru/about', external: true },
-  { label: 'Контакты', href: 'https://tarasov-auto.ru/contacts', external: true },
+  { label: '2ГИС', href: 'https://2gis.ru/novosibirsk/firm/70000001097573244/tab/reviews', external: true },
+  //{ label: 'Наш подход', href: 'https://tarasov-auto.ru/approach', external: true },
+  //{ label: 'Опции', href: 'https://tarasov-auto.ru/options', external: true },
+  //{ label: 'О компании', href: 'https://tarasov-auto.ru/about', external: true },
+  //{ label: 'Контакты', href: 'https://tarasov-auto.ru/contacts', external: true },
 ];
 
 const defaultContactInfo: ContactInfo = {
-  phone: '+7 953 777 34 56',
+  phone: '+7 993 003 00 00',
   city: 'Новосибирск',
   socialLinks: {
     youtube: 'https://www.youtube.com/@tarasov_auto',
@@ -151,7 +152,7 @@ const Header: React.FC<HeaderProps> = ({
             <img
               src="/logo_black.png"
               alt="Tarasov Auto Logo"
-              className="h-[40px] lg:h-[60px] w-auto object-contain"
+              className="h-[40px] lg:h-[40px] w-auto object-contain"
             />
           </a>
 

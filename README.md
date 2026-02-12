@@ -1,268 +1,327 @@
-# 🚗 Tamx Website - Каталог автомобилей из Кореи
+# Tamx Auto — Каталог автомобилей из Кореи и Китая
 
-Полнофункциональная платформа для продажи корейских автомобилей с автоматическим расчетом растаможки, кредитным калькулятором и интеграцией с внешними API.
+Полнофункциональная платформа для продажи автомобилей с автоматическим расчётом растаможки, кредитным калькулятором, интеграцией с Encar (Корея) и Che168 (Китай).
 
-## 📋 О проекте
+## О проекте
 
-Tamx Website — это full-stack веб-приложение для каталога автомобилей с возможностью:
-- Просмотра каталога автомобилей из Кореи (Encar)
-- Автоматического расчета стоимости растаможки
-- Кредитного калькулятора для расчета ежемесячных платежей
-- Фильтрации по множеству параметров (бренд, модель, год, цена, пробег и др.)
-- Сохранения избранных автомобилей
-- Отправки заявок на покупку
+**Tamx Auto** — full-stack веб-приложение для каталога автомобилей:
+- Просмотр каталога из Кореи (Encar) и Китая (Che168)
+- Автоматический расчёт стоимости растаможки и логистики
+- Кредитный калькулятор для расчёта ежемесячных платежей
+- Фильтрация по множеству параметров (бренд, модель, год, цена, пробег и др.)
+- Сохранение избранных автомобилей
+- Отправка заявок на покупку
 
-## 🏗️ Архитектура проекта
+**Сайт**: https://auto.tamx.ru
+**API**: https://api.tamx.ru
+
+## Архитектура проекта
 
 ```
 tarasov-auto/
-├── backend/              # Express API сервер
-│   ├── components/       # Обработчики запросов
-│   ├── keys/            # Ключи и секреты (не в git)
-│   └── index.js         # Точка входа сервера
+├── .env                    # Общие переменные окружения (DATABASE_URL, токены)
 │
-├── frontend/            # React SPA приложение
-│   ├── client/         # Исходный код фронтенда
+├── backend/                # Express API сервер (:3000)
+│   ├── index.js            # Точка входа
+│   └── components/         # Обработчики маршрутов
+│       ├── getFilteredCars.js
+│       ├── getCarDetails.js
+│       ├── getFilters.js
+│       ├── deliveryCost.js
+│       ├── heroCard.js
+│       ├── horsePower.js
+│       └── submitLead.js
+│
+├── frontend/               # React SPA приложение (:8000)
+│   ├── client/
 │   │   └── src/
-│   │       ├── components/  # UI компоненты (Atomic Design)
-│   │       │   ├── atoms/       # Базовые компоненты
-│   │       │   ├── molecules/   # Составные компоненты
-│   │       │   ├── organisms/   # Сложные блоки
-│   │       │   └── templates/   # Шаблоны страниц
-│   │       ├── hooks/       # Custom React hooks
-│   │       ├── lib/         # Утилиты и API клиент
-│   │       ├── pages/       # Страницы приложения
-│   │       └── types/       # TypeScript типы
-│   ├── production/     # Production сервер и конфигурация
-│   └── public/         # Статические файлы
+│   │       ├── components/     # UI компоненты (Atomic Design)
+│   │       │   ├── atoms/          # Button, Input, Badge, Icon, FavoritesButton
+│   │       │   ├── molecules/      # CreditCalculator, DeliveryToCity, LocationSection
+│   │       │   ├── organisms/      # CarCard, CarGrid, Header, Footer, FiltersAside
+│   │       │   └── templates/      # CarDetailTemplate
+│   │       ├── hooks/          # useCars, useFavorites, useHierarchicalFilters
+│   │       ├── lib/            # API клиент, утилиты, форматирование, финансы
+│   │       ├── pages/          # CarDetailPage, CatalogPage, NotFound
+│   │       └── types/          # TypeScript типы
+│   └── production/         # Production-сервер (PM2, cluster mode)
+│       ├── server.js
+│       └── ecosystem.config.cjs
 │
-└── database/           # Скрипты обновления данных
-    ├── encar-webcatalog-recalc/  # Калькулятор растаможки
-    └── parser-api/               # API парсер Encar
-
+└── database/               # Сервисы работы с данными
+    ├── encar-webcatalog-recalc/    # Пересчёт каталога и поиск HP
+    │   └── src/
+    │       ├── index_v2.js             # Основной воркер (PM2: encar-recalc-v2)
+    │       ├── components/             # calculateBatch, fetchData, hpSearchService
+    │       ├── lib/                    # panAutoApi, openaiApi, koreanMapping
+    │       └── utils/                  # dbClient, logger, telegramNotifier
+    │
+    ├── parser-api/                 # API для парсера данных (:4000)
+    │   ├── carApi_v2.js                # Основной сервер (PM2: parser-api-v2)
+    │   └── deliveryCost/               # Данные стоимости доставки
+    │
+    └── che168-api/                 # Receiver синхронизации Che168 (:4100)
+        ├── ecosystem.config.cjs        # PM2 конфиг (PM2: che168-receiver)
+        └── src/
+            ├── config.js               # Конфигурация (DATABASE_URL из корневого .env)
+            ├── dbClient.js             # PostgreSQL пул соединений
+            └── server.js               # Express-сервер (приём батчей изменений)
 ```
 
-## 🚀 Технологический стек
+## Инфраструктура
+
+### Серверы
+
+| Роль | Адрес | Описание |
+|------|-------|----------|
+| Сервер B (production) | 82.202.170.246 | Основной сервер: фронтенд, бэкенд, БД |
+| Сервер A (encar-project) | 103.71.20.164 (kclauto.ru) | Парсинг данных, синхронизация с API |
+
+### Сервисы (PM2)
+
+| Имя | Порт | Режим | Описание |
+|-----|------|-------|----------|
+| `backend` | 3000 | cluster (5) | REST API для фронтенда |
+| `tarasov-auto-frontend` | 8000 | cluster (8) | SSR/SPA React-приложение |
+| `parser-api-v2` | 4000 | fork | API для парсера Encar |
+| `encar-recalc-v2` | — | fork | Фоновый пересчёт каталога и HP |
+| `che168-receiver` | 4100 | fork | Приёмник синхронизации Che168 |
+
+### Nginx (reverse proxy)
+
+| Домен | Назначение | Проксирует на |
+|-------|------------|---------------|
+| `auto.tamx.ru` | Фронтенд (HTTP/HTTPS) | `localhost:8000` |
+| `api.tamx.ru` | Backend API (HTTPS) | `localhost:3000` |
+
+### Файрвол (UFW)
+
+| Порт | Доступ | Сервис |
+|------|--------|--------|
+| 22 | Отовсюду | SSH |
+| 80, 443 | Отовсюду | Nginx (HTTP/HTTPS) |
+| 3000 | Отовсюду | Backend API |
+| 4000 | Отовсюду | Parser API |
+| 8000 | Отовсюду | Frontend |
+| 4100 | Только 103.71.20.164 | che168-receiver |
+
+### База данных (PostgreSQL)
+
+| Таблица | Описание |
+|---------|----------|
+| `encar_db_prod` | Основной каталог автомобилей (Encar, Корея) |
+| `encar_webcatalog` | Пересчитанный каталог с растаможкой |
+| `che168_autoparser` | Каталог автомобилей (Che168, Китай) |
+| `cars_hp_reference_v2` | Справочник лошадиных сил |
+| `car_filters` | Кэш фильтров каталога |
+| `customs_rates` / `customs_rate_0_3` | Таможенные ставки |
+| `customs_fee` | Таможенные сборы |
+| `exchange_rates` | Курсы валют |
+| `util_rates` | Утилизационный сбор |
+| `SWIFT` | Справочник SWIFT-кодов |
+
+**Подключение**: `postgresql://encaruser:***@localhost:5432/encar_local_db`
+
+## Технологический стек
 
 ### Frontend
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: TailwindCSS 3
-- **UI Components**: Radix UI (доступность из коробки)
-- **State Management**: React Query (серверное состояние)
-- **Routing**: React Router 6 (SPA mode)
-- **Icons**: Lucide React
-- **Forms**: React Hook Form + Zod validation
+- **React 19** + TypeScript
+- **Vite 7** (сборка)
+- **TailwindCSS 3** (стили)
+- **Radix UI** (доступные UI-компоненты)
+- **React Query** (серверное состояние и кэширование)
+- **React Router 6** (маршрутизация)
+- **Zod** (валидация)
 
 ### Backend
-- **Runtime**: Node.js 20+
-- **Framework**: Express 5
-- **Architecture**: REST API
+- **Node.js 20** + Express 5
+- **PostgreSQL** (pg)
+- **express-rate-limit** (защита от перебора)
 
-### Database Scripts
-- **Парсинг**: Автоматический парсинг данных с Encar
-- **Расчеты**: Калькуляция растаможки и логистики
-- **Обновление**: Batch обработка данных
+### Database Services
+- **pg** — прямые SQL-запросы к PostgreSQL
+- **dotenv** — конфигурация через `.env`
+- **axios** — HTTP-запросы к внешним API
+- **OpenAI API** — поиск лошадиных сил (fallback)
 
 ### DevOps
-- **Process Manager**: PM2 (production)
-- **Web Server**: Nginx (reverse proxy)
-- **Monitoring**: PM2 + custom logging
-- **Deployment**: Automated scripts
+- **PM2** — менеджер процессов (cluster + fork)
+- **pm2-logrotate** — ротация логов
+- **Nginx** — reverse proxy, SSL (Let's Encrypt)
+- **UFW** — файрвол
+- **Ubuntu 24.04 LTS**
 
-## 📦 Установка и запуск
+## Синхронизация Che168 (Сервер A → Сервер B)
+
+```
+Сервер A (103.71.20.164)          Сервер B (82.202.170.246)
+┌──────────────────────┐          ┌──────────────────────┐
+│ syncChanges.mjs      │          │ che168-receiver       │
+│   ↓                  │  HTTP    │   (Express, :4100)    │
+│ che168Forwarder.js ──┼─ POST ──►│   ↓                  │
+│   (батч изменений)   │          │ UPSERT/DELETE → БД   │
+└──────────────────────┘          └──────────────────────┘
+```
+
+- Сервер A получает данные от auto-parser.ru (подписка привязана к 1 IP)
+- Записывает в свою БД, затем пересылает батч на Сервер B
+- Сервер B принимает и применяет изменения через UPSERT/DELETE
+- Авторизация: заголовок `x-api-key`
+- Порт 4100 открыт только для IP Сервера A
+
+## API Endpoints
+
+### Backend API (api.tamx.ru)
+
+```
+GET  /catalog          # Список автомобилей с фильтрами
+GET  /car/:id          # Детали автомобиля
+GET  /filters          # Опции фильтров
+GET  /herocard         # Карточка для главной страницы
+GET  /deliveryCost     # Стоимость доставки
+GET  /hp               # Поиск лошадиных сил
+POST /hp               # Поиск лошадиных сил (POST)
+POST /lead             # Отправка заявки
+```
+
+### Che168 Receiver (порт 4100, только для Сервера A)
+
+```
+GET  /health                  # Healthcheck → {"ok": true}
+POST /api/che168/changes      # Приём батча изменений (x-api-key)
+```
+
+## Установка и запуск
 
 ### Предварительные требования
 - Node.js >= 20.0.0
-- npm или pnpm
-- Git
+- PostgreSQL 16
+- Nginx
+- PM2 (`npm install -g pm2`)
 
 ### Backend
 
 ```bash
 cd backend
 npm install
-npm start
+pm2 start index.js --name backend -i 5
 ```
 
-Сервер запустится на порту из `.env` файла.
-
-### Frontend (Development)
+### Frontend
 
 ```bash
+# Development
 cd frontend
 pnpm install
 pnpm dev
-```
 
-Приложение будет доступно на `http://localhost:5173`
-
-### Frontend (Production)
-
-```bash
-# Сборка
-cd frontend
+# Production сборка и деплой
 pnpm build:production
-
-# Деплой
 cd production
 npm install
 pm2 start ecosystem.config.cjs --env production
 ```
 
-### Database Scripts
+### Database Services
 
 ```bash
+# Пересчёт каталога
 cd database/encar-webcatalog-recalc
 npm install
-npm start
+pm2 start src/index_v2.js --name encar-recalc-v2
+
+# Parser API
+cd database/parser-api
+npm install
+pm2 start carApi_v2.js --name parser-api-v2
+
+# Che168 Receiver
+cd database/che168-api
+npm install
+pm2 start ecosystem.config.cjs
 ```
 
-## 🔧 Конфигурация
+## Конфигурация
 
-### Environment Variables
+### Переменные окружения (.env в корне проекта)
 
-Каждый модуль требует свой `.env` файл:
-
-**Backend** (`backend/keys/.env`):
 ```env
-TELEGRAM_TOKEN=your_telegram_bot_token
-API_KEY=your_api_key
+# База данных
+DATABASE_URL=postgresql://encaruser:***@localhost:5432/encar_local_db
+
+# Telegram (уведомления)
+TELEGRAM_TOKEN=***
+TELEGRAM_CHAT_ID=***
+
+# Telegram бот
+TG_BOT_TOKEN=***
+TG_CHAT_IDS=***
+
+# OpenAI (поиск HP)
+CHATGPT_API=***
+
+# Backend
+PORT=3000
+NODE_ENV=production
+
+# Che168 Receiver (опционально)
+RECEIVER_PORT=4100
+RECEIVER_API_KEY=***
 ```
 
-**Frontend** (`frontend/.env.production`):
-```env
-VITE_API_BASE_URL=https://api.tamx.ru
+## Мониторинг
+
+```bash
+# Статус всех сервисов
+pm2 ls
+
+# Логи конкретного сервиса
+pm2 logs backend --lines 50
+pm2 logs che168-receiver --lines 50
+
+# Healthcheck Che168 receiver
+curl http://localhost:4100/health
+
+# Количество записей в каталогах
+psql -U encaruser -d encar_local_db -c "
+  SELECT 'encar_db_prod' as table_name, COUNT(*) FROM encar_db_prod
+  UNION ALL
+  SELECT 'che168_autoparser', COUNT(*) FROM che168_autoparser;
+"
 ```
 
-**Database** (`database/encar-webcatalog-recalc/.env`):
-```env
-DB_HOST=your_database_host
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-```
-
-## 🎨 Особенности фронтенда
+## Особенности фронтенда
 
 ### Atomic Design
-Компоненты организованы по методологии Atomic Design:
-- **Atoms**: Базовые элементы (Button, Input, Icon)
-- **Molecules**: Простые составные компоненты (Select, PriceRange)
-- **Organisms**: Сложные блоки (Header, Footer, CarCard)
-- **Templates**: Шаблоны страниц (CarDetailTemplate)
+- **Atoms**: Button, Input, Badge, Icon, FavoritesButton, PriceTag, Skeleton
+- **Molecules**: CreditCalculator, DeliveryToCity, FavoritesPopover, LocationSection
+- **Organisms**: CarCard, CarGrid, Header, Footer, FiltersAside, CarGallery, FinanceBlock
+- **Templates**: CarDetailTemplate
 
 ### Оптимизации
-- ✅ Code splitting (React.lazy)
-- ✅ Image optimization (WebP)
-- ✅ React Query caching
-- ✅ localStorage для фильтров
-- ✅ Debouncing для поиска
-- ✅ Memoization критичных вычислений
+- Code splitting (React.lazy)
+- Image optimization (WebP)
+- React Query caching
+- localStorage для фильтров и избранного
+- Debouncing для поиска
+- Memoization критичных вычислений
 
-### Безопасность
-- ✅ Helmet для HTTP заголовков
-- ✅ CSP (Content Security Policy)
-- ✅ XSS защита (без innerHTML)
-- ✅ CORS настроен
-- ✅ Rate limiting на API
+## Безопасность
 
-## 📊 API Endpoints
+- HTTPS only (Nginx + Let's Encrypt)
+- Helmet для HTTP-заголовков
+- CSP (Content Security Policy)
+- XSS защита
+- CORS настроен
+- Rate limiting на API
+- UFW — ограничение доступа по портам
+- API-ключ для межсерверной синхронизации
+- Секреты в `.env` (приватный репозиторий)
 
-### Catalog API
-```
-GET /api/catalog          # Список автомобилей
-GET /api/catalog/:id      # Детали автомобиля
-GET /api/filters          # Опции фильтров
-GET /api/deliveryCost     # Стоимость доставки
-POST /api/lead            # Отправка заявки
-```
+## Лицензия
 
-## 🔄 Обновление данных
-
-Автоматическое обновление данных через cron:
-```bash
-# Запуск парсера каждые 6 часов
-0 */6 * * * cd /root/tarasov-auto/database/encar-webcatalog-recalc && npm start
-```
-
-## 📝 Логирование
-
-### Production логи
-- **Расположение**: `frontend/production/logs/`
-- **Ротация**: Максимум 10 файлов по 10MB (PM2)
-- **Очистка**: Автоматическая очистка логов старше 7 дней
-
-Настройка автоматической очистки:
-```bash
-chmod +x frontend/production/cleanup-logs.sh
-
-# Добавить в crontab (каждый день в 2:00)
-crontab -e
-# Добавить строку:
-0 2 * * * /root/tarasov-auto/frontend/production/cleanup-logs.sh >> /root/tarasov-auto/frontend/production/logs/cleanup.log 2>&1
-```
-
-## 🛠️ Разработка
-
-### Структура коммитов
-```
-feat: добавление новой функции
-fix: исправление бага
-docs: обновление документации
-style: форматирование кода
-refactor: рефакторинг без изменения функциональности
-perf: оптимизация производительности
-test: добавление тестов
-chore: обновление зависимостей, конфигурации
-```
-
-### Code Style
-- TypeScript strict mode
-- ESLint + Prettier
-- SOLID принципы
-- KISS (Keep It Simple, Stupid)
-
-## 📈 Производительность
-
-### Метрики
-- First Contentful Paint: < 1.5s
-- Time to Interactive: < 3.0s
-- Total Bundle Size: < 500KB (gzipped)
-
-### Оптимизации
-- Tree shaking (Vite)
-- Code splitting по роутам
-- Lazy loading изображений
-- React Query для кэширования API
-- Compression (gzip/brotli)
-
-## 🔒 Безопасность
-
-### Implemented
-- ✅ HTTPS only
-- ✅ Helmet security headers
-- ✅ CSP (Content Security Policy)
-- ✅ XSS protection
-- ✅ CSRF tokens
-- ✅ Rate limiting
-- ✅ Input validation (Zod)
-- ✅ Secure environment variables
-
-### Best Practices
-- Secrets в `.env` файлах (приватный репозиторий)
-- Регулярное обновление зависимостей
-- Мониторинг уязвимостей (`npm audit`)
-
-## 📞 Контакты
-
-- **Сайт**: https://auto.tamx.ru
-- **API**: https://api.tamx.ru
-
-## 📄 Лицензия
-
-Private - All rights reserved © 2024-2025 Tamx
+Private — All rights reserved © 2024-2026 Tamx
 
 ---
 
-**Последнее обновление**: 29 ноября 2024
-
+**Последнее обновление**: 12 февраля 2026

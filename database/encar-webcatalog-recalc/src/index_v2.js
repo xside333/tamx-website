@@ -1,4 +1,4 @@
-// src/index_v3.js
+// src/index_v2.js
 // Версия с интегрированным HP поиском в процесс пересчёта
 // Если hp = null/0 в encar_db_prod → ищем через pan-auto/OpenAI → пишем в справочник + prod
 

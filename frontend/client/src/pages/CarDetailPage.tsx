@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate, useNavigate } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getCar } from '../lib/api';
 import { transformApiCarToCar } from '../lib/apiTransforms';
@@ -39,8 +39,7 @@ import {
  */
 const CarDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { favoriteCars, removeFromFavorites, markUnavailable, toggleFavorite, isFavorite } = useFavorites();
+  const { favoriteCarIds, removeFromFavorites, toggleFavorite, isFavorite } = useFavorites();
   const [leadOpen, setLeadOpen] = useState(false);
   const [leadTitle, setLeadTitle] = useState<string | undefined>();
   const [leadBtn, setLeadBtn] = useState<string | undefined>();
@@ -74,9 +73,10 @@ const CarDetailPage: React.FC = () => {
   // Mark car as unavailable only once, outside of render path
   useEffect(() => {
     if (isNotFound && id) {
-      try { markUnavailable(id); } catch {}
+      // Удаляем из избранного если автомобиль не найден
+      try { removeFromFavorites(id); } catch {}
     }
-  }, [isNotFound, id, markUnavailable]);
+  }, [isNotFound, id, removeFromFavorites]);
 
   if (error) {
     return (
@@ -154,7 +154,7 @@ const CarDetailPage: React.FC = () => {
           currentCarId={car.id}
           currentPrice={getFinalPrice(carData)}
           onFavoriteToggle={toggleFavorite}
-          favoriteCarIds={favoriteCars.map(c => c.id)}
+          favoriteCarIds={favoriteCarIds}
         />
         </div>
       </main>
@@ -180,9 +180,10 @@ const CarDetailPage: React.FC = () => {
       <Footer />
       {/* Floating Favorites Button (bottom-right) */}
       <FloatingFavoritesButton
-        favoriteCars={favoriteCars}
+        favoriteIds={favoriteCarIds}
         onCarClick={(carId: string) => {
-          if (carId !== id) navigate(`/car/${carId}`);
+          // Всегда открываем в новой вкладке с детальной страницы
+          window.open(`/car/${carId}`, '_blank', 'noopener,noreferrer');
         }}
         onRemoveFromFavorites={removeFromFavorites}
       />
@@ -360,9 +361,9 @@ const CarTitleSection: React.FC<{ car: any; carData: CarDetailData; isFavoriteFn
           <Button
             variant="primary"
             className="flex-1 sm:flex-none px-4 lg:px-5 py-3 lg:py-4 text-sm lg:text-base"
-            onClick={() => onOpenLead('Заявка на покупку авто', 'Купить')}
+            onClick={() => onOpenLead('Заявка на покупку авто', 'Хочу такую')}
           >
-            Купить
+            Хочу такую
           </Button>
         </div>
 
@@ -393,7 +394,7 @@ const CarTitleSection: React.FC<{ car: any; carData: CarDetailData; isFavoriteFn
                   className="flex-1 text-sm h-[50px]"
                   onClick={() => onOpenLead('Заявка на покупку авто', 'Купить')}
                 >
-                  Купить
+                  Узнать больше
                 </Button>
               </div>
             </div>

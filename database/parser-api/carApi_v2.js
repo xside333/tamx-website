@@ -142,6 +142,42 @@ async function lookupHpFromReference(car) {
       return { hp, isNew: false, skipped: false };
     }
     
+    // 1b. Fuzzy-поиск: ищем "близнецов" с displacement ±10
+    const fuzzyResult = await pool.query(`
+      SELECT hp, source, displacement
+      FROM cars_hp_reference_v2
+      WHERE cartype = $1
+        AND manufacturerenglishname = $2
+        AND modelgroupenglishname = $3
+        AND modelname = $4
+        AND COALESCE(gradeenglishname, '') = COALESCE($5, '')
+        AND COALESCE(year, 0) = COALESCE($6, 0)
+        AND fuelname = $7
+        AND COALESCE(transmission_name, '') = COALESCE($8, '')
+        AND ABS(COALESCE(displacement, 0) - $9) <= 10
+        AND COALESCE(displacement, 0) <> $9
+        AND hp > 0
+        AND status = 'done'
+      ORDER BY ABS(COALESCE(displacement, 0) - $9) ASC
+      LIMIT 1
+    `, [
+      cartype, manufacturerenglishname, modelgroupenglishname, modelname,
+      gradeenglishname || '', year || 0, fuelname, transmission_name || '', displacement || 0
+    ]);
+    
+    if (fuzzyResult.rows.length > 0) {
+      const fuzzyRow = fuzzyResult.rows[0];
+      console.log(`   🔗 [Parser] Fuzzy match: displacement ${displacement} → ${fuzzyRow.displacement} (HP: ${fuzzyRow.hp})`);
+      
+      // Сохраняем HP для текущего displacement
+      await createReferenceRecord({
+        ...filter, hp: fuzzyRow.hp, source: `fuzzy:${fuzzyRow.source}`, marker: 'Точно (fuzzy)',
+        description: `Copied from displacement ${fuzzyRow.displacement}`, id_sample: car?.id
+      });
+      
+      return { hp: fuzzyRow.hp, isNew: true, skipped: false };
+    }
+    
     // 2. Не нашли в справочнике → ИЩЕМ HP
     console.log(`🔍 [Parser] New filter: ${manufacturerenglishname} ${modelgroupenglishname} ${modelname} (${year})`);
     

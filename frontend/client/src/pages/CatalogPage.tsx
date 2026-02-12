@@ -35,7 +35,6 @@ const CatalogPage: React.FC = () => {
 
   const {
     favoriteCarIds,
-    favoriteCars,
     toggleFavorite,
     removeFromFavorites,
     isFavorite,
@@ -390,7 +389,7 @@ const CatalogPage: React.FC = () => {
 
       {/* Floating Favorites Button */}
       <FloatingFavoritesButton
-        favoriteCars={favoriteCars}
+        favoriteIds={favoriteCarIds}
         onCarClick={handleFavoriteCarClick}
         onRemoveFromFavorites={removeFromFavorites}
       />

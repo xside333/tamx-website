@@ -111,6 +111,57 @@ async function lookupHpInReference(filter) {
 }
 
 /**
+ * Поиск HP в справочнике с fuzzy-matching по displacement (±10)
+ * Ищем записи где все фильтры совпадают, но displacement отличается не более чем на 10
+ * Возвращаем только если найден HP > 0
+ */
+async function lookupHpInReferenceFuzzy(filter) {
+  try {
+    const displacement = filter.displacement || 0;
+    
+    const result = await pool.query(`
+      SELECT hp, source, displacement
+      FROM cars_hp_reference_v2
+      WHERE cartype = $1
+        AND manufacturerenglishname = $2
+        AND modelgroupenglishname = $3
+        AND modelname = $4
+        AND COALESCE(gradeenglishname, '') = COALESCE($5, '')
+        AND COALESCE(year, 0) = COALESCE($6, 0)
+        AND fuelname = $7
+        AND COALESCE(transmission_name, '') = COALESCE($8, '')
+        AND ABS(COALESCE(displacement, 0) - $9) <= 10
+        AND COALESCE(displacement, 0) <> $9
+        AND hp > 0
+        AND status = 'done'
+      ORDER BY ABS(COALESCE(displacement, 0) - $9) ASC
+      LIMIT 1
+    `, [
+      filter.cartype,
+      filter.manufacturerenglishname,
+      filter.modelgroupenglishname,
+      filter.modelname,
+      filter.gradeenglishname || '',
+      filter.year || 0,
+      filter.fuelname,
+      filter.transmission_name || '',
+      displacement
+    ]);
+    
+    if (result.rows.length > 0) {
+      const row = result.rows[0];
+      log(`   🔗 Fuzzy match: displacement ${displacement} → ${row.displacement} (HP: ${row.hp})`);
+      return { hp: row.hp, source: row.source, found: true, fuzzyDisplacement: row.displacement };
+    }
+    
+    return { hp: null, source: null, found: false };
+  } catch (error) {
+    log(`⚠️ HP fuzzy lookup error: ${error.message}`);
+    return { hp: null, source: null, found: false };
+  }
+}
+
+/**
  * Сохранить HP в cars_hp_reference_v2
  */
 async function saveHpToReference(filter, hp, source, marker, description) {
@@ -295,7 +346,19 @@ export async function findAndSetHp(car) {
     }
   }
   
-  // 2. Проверка на "Others/기타" — пропускаем API поиск, сразу hp=0
+  // 2. Fuzzy-поиск: проверяем "близнецов" с displacement ±10
+  // Это позволяет избежать повторных API запросов для одинаковых моделей с разным displacement
+  const fuzzyRef = await lookupHpInReferenceFuzzy(filter);
+  if (fuzzyRef.found && fuzzyRef.hp > 0) {
+    // Нашли HP у "близнеца" — сохраняем для текущего displacement
+    await saveHpToReference(filter, fuzzyRef.hp, `fuzzy:${fuzzyRef.source}`, 'Точно (fuzzy)', 
+      `Copied from displacement ${fuzzyRef.fuzzyDisplacement}`);
+    const updatedCount = await updateHpInProdByFilter(filter, fuzzyRef.hp);
+    log(`   ✅ Fuzzy HP found: ${fuzzyRef.hp} (from displacement ${fuzzyRef.fuzzyDisplacement})`);
+    return { hp: fuzzyRef.hp, source: `fuzzy:${fuzzyRef.source}`, updated: true, batchCount: updatedCount };
+  }
+  
+  // 3. Проверка на "Others/기타" — пропускаем API поиск, сразу hp=0
   if (shouldSkipHpSearch(filter)) {
     logHpSearch('skipped', filter, 0, 'Others/기타');
     await saveHpToReference(filter, 0, 'skipped', 'Others/기타', 'Generic category - HP search skipped');
@@ -303,7 +366,7 @@ export async function findAndSetHp(car) {
     return { hp: 0, source: 'skipped:others', updated: true, batchCount: updatedCount };
   }
   
-  // 3. Запись НЕ существует в справочнике — ищем через pan-auto
+  // 4. Запись НЕ существует в справочнике — ищем через pan-auto
   log(`🔍 Searching HP for: ${filterName}`);
   const carIds = await getCarIdsForPanAuto(filter, 5);
   
@@ -321,7 +384,7 @@ export async function findAndSetHp(car) {
     await sleep(200);
   }
   
-  // 4. Ищем через OpenAI (вызывается ВСЕГДА если не нашли в pan-auto)
+  // 5. Ищем через OpenAI (вызывается ВСЕГДА если не нашли в pan-auto)
   log(`🤖 OpenAI search for: ${filterName}`);
   const openaiResult = await searchHpInOpenAI(filter);
   
@@ -335,7 +398,7 @@ export async function findAndSetHp(car) {
     return { hp: openaiResult.hp, source: 'openai', updated: true, batchCount: updatedCount };
   }
   
-  // 5. Не нашли нигде — сохраняем hp=0 в справочник, чтобы не повторять поиск
+  // 6. Не нашли нигде — сохраняем hp=0 в справочник, чтобы не повторять поиск
   await saveHpToReference(filter, 0, 'notfound', 'Не найдено', 'HP not found via pan-auto and OpenAI');
   const updatedCount = await updateHpInProdByFilter(filter, 0);
   // ЛОГИРУЕМ в файл

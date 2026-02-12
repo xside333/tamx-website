@@ -32,11 +32,11 @@ const LocationSection: React.FC = () => {
 
         <div className="flex flex-col lg:flex-row lg:items-center space-y-2 lg:space-y-0 lg:space-x-8 mt-4">
           <a
-            href="tel:+79537773456"
+            href="tel:+79930030000"
             className="flex items-center space-x-2 text-primary hover:text-accent transition-colors"
           >
             <Icon name="phone" size="md" className="text-secondary" />
-            <span className="text-sm font-medium">+79537773456</span>
+            <span className="text-sm font-medium">+79930030000</span>
           </a>
 
           <div className="flex items-center space-x-2">

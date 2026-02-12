@@ -1,4 +1,5 @@
 export { useFavorites } from './useFavorites';
+export { useFavoriteCars } from './useFavoriteCars';
 export { useCars, useFilterOptions, useDependentFilterOptions, useCar } from './useCars';
 export { useStickyFilters } from './useStickyFilters';
 export { useResponsiveHeader } from './useResponsiveHeader';

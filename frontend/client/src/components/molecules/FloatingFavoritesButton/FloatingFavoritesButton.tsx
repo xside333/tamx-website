@@ -1,17 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '../../../lib/utils';
 import { FavoritesPopover } from '../FavoritesPopover';
-import { Car } from '../../../types';
 
 interface FloatingFavoritesButtonProps {
-  favoriteCars: Car[];
+  favoriteIds: string[];
   onCarClick: (carId: string) => void;
   onRemoveFromFavorites: (carId: string) => void;
   className?: string;
 }
 
 const FloatingFavoritesButton: React.FC<FloatingFavoritesButtonProps> = ({
-  favoriteCars,
+  favoriteIds,
   onCarClick,
   onRemoveFromFavorites,
   className,
@@ -41,7 +40,7 @@ const FloatingFavoritesButton: React.FC<FloatingFavoritesButtonProps> = ({
     }
   }, [isOpen]);
 
-  if (favoriteCars.length === 0) return null;
+  if (favoriteIds.length === 0) return null;
 
   const buttonClasses = cn(
     'fixed w-14 h-14 bg-accent rounded-full',
@@ -58,7 +57,7 @@ const FloatingFavoritesButton: React.FC<FloatingFavoritesButtonProps> = ({
           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
         </svg>
         <span className="absolute -top-2 -right-2 w-6 h-6 bg-surface text-accent text-xs font-bold rounded-full flex items-center justify-center">
-          {favoriteCars.length}
+          {favoriteIds.length}
         </span>
       </button>
 
@@ -66,7 +65,7 @@ const FloatingFavoritesButton: React.FC<FloatingFavoritesButtonProps> = ({
       <FavoritesPopover
         isOpen={isOpen}
         onClose={handleClose}
-        favoriteCars={favoriteCars}
+        favoriteIds={favoriteIds}
         onCarClick={onCarClick}
         onRemoveFromFavorites={onRemoveFromFavorites}
         className="fixed favorites-popover-mobile right-[10px] md:bottom-[92px] md:right-6 z-40 md:z-dropdown"

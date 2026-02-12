@@ -234,7 +234,7 @@ const CarCard: React.FC<CarCardProps> = ({
             className="h-[36px] px-4 py-2"
             onClick={(e) => { e.stopPropagation(); setLeadOpen(true); }}
           >
-            Купить
+            Хочу такую
           </Button>
         </div>
 
@@ -275,7 +275,7 @@ const CarCard: React.FC<CarCardProps> = ({
         }}
         title="Заявка на покупку авто"
         pageLabel="Каталог"
-        btnLabel="Купить"
+        btnLabel="Узнать подробнее"
       />
     </div>
   );

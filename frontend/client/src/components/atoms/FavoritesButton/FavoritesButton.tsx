@@ -4,14 +4,14 @@ import { Icon } from '../Icon';
 import { FavoritesPopover } from '../../molecules';
 
 interface FavoritesButtonProps {
-  favoriteCars: any[];
+  favoriteIds: string[];
   onCarClick: (carId: string) => void;
   onRemoveFromFavorites: (carId: string) => void;
   className?: string;
 }
 
 const FavoritesButton: React.FC<FavoritesButtonProps> = ({
-  favoriteCars,
+  favoriteIds,
   onCarClick,
   onRemoveFromFavorites,
   className,
@@ -55,9 +55,9 @@ const FavoritesButton: React.FC<FavoritesButtonProps> = ({
         <span className="text-primary text-sm font-medium hidden lg:block">
           Избранное
         </span>
-        {favoriteCars.length > 0 && (
+        {favoriteIds.length > 0 && (
           <div className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-on-accent text-xs rounded-full flex items-center justify-center">
-            {favoriteCars.length}
+            {favoriteIds.length}
           </div>
         )}
       </div>
@@ -65,7 +65,7 @@ const FavoritesButton: React.FC<FavoritesButtonProps> = ({
       <FavoritesPopover
         isOpen={isOpen}
         onClose={handleClose}
-        favoriteCars={favoriteCars}
+        favoriteIds={favoriteIds}
         onCarClick={onCarClick}
         onRemoveFromFavorites={onRemoveFromFavorites}
       />
