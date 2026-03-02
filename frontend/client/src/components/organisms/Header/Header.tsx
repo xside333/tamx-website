@@ -11,7 +11,13 @@ interface HeaderProps extends BaseComponentProps {
 
 const defaultNavItems: NavItem[] = [
   { label: 'Каталог', href: '/catalog' },
-  { label: '2ГИС', href: 'https://2gis.ru/novosibirsk/firm/70000001097573244/tab/reviews', external: true },
+  { label: 'Продать', href: 'https://tamx.ru/buyout' },
+  { label: 'Кредит', href: 'https://tamx.ru/credit' },
+  { label: 'Сервисы', href: 'https://tamx.ru/services' },
+  { label: 'О нас', href: 'https://tamx.ru/about' },
+  { label: 'Контакты', href: 'https://tamx.ru/contacts' },
+  { label: 'Журнал', href: 'https://tamx.ru/journal' },
+  { label: 'Отзывы', href: 'https://tamx.ru/reviews' },
   //{ label: 'Наш подход', href: 'https://tarasov-auto.ru/approach', external: true },
   //{ label: 'Опции', href: 'https://tarasov-auto.ru/options', external: true },
   //{ label: 'О компании', href: 'https://tarasov-auto.ru/about', external: true },
@@ -19,7 +25,7 @@ const defaultNavItems: NavItem[] = [
 ];
 
 const defaultContactInfo: ContactInfo = {
-  phone: '+7 993 003 00 00',
+  phone: '+7 953 777 34 56',
   city: 'Новосибирск',
   socialLinks: {
     youtube: 'https://www.youtube.com/@tarasov_auto',
@@ -148,7 +154,7 @@ const Header: React.FC<HeaderProps> = ({
         <div className="bg-surface rounded-xl p-3 lg:p-0 lg:bg-transparent">
           <div className="flex items-center justify-between gap-5">
           {/* Logo */}
-          <a href="/catalog" className="flex-shrink-0 flex items-center">
+          <a href="https://tamx.ru/" className="flex-shrink-0 flex items-center">
             <img
               src="/logo_black.png"
               alt="Tarasov Auto Logo"
@@ -178,40 +184,6 @@ const Header: React.FC<HeaderProps> = ({
                   {item.label}
                 </a>
               ))}
-
-              {contactInfo.socialLinks.youtube && (
-                <a
-                  href={contactInfo.socialLinks.youtube}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center px-5 text-secondary hover:text-accent transition-all duration-300 no-underline"
-                  aria-label="YouTube"
-                >
-                  <Icon name="youtube" size="lg" />
-                </a>
-              )}
-              {contactInfo.socialLinks.whatsapp && (
-                <a
-                  href={contactInfo.socialLinks.whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center px-5 text-secondary hover:text-accent transition-all duration-300 no-underline"
-                  aria-label="WhatsApp"
-                >
-                  <Icon name="whatsapp" size="md" />
-                </a>
-              )}
-              {contactInfo.socialLinks.telegram && (
-                <a
-                  href={contactInfo.socialLinks.telegram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center px-5 text-secondary hover:text-accent transition-all duration-300 no-underline"
-                  aria-label="Telegram"
-                >
-                  <Icon name="telegram" size="md" className="w-[22px] h-[22px]" />
-                </a>
-              )}
             </div>
           </nav>
 

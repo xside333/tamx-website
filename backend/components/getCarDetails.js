@@ -12,13 +12,14 @@ const pool = new Pool({
 export const getCarDetails = async (req, res) => {
   const { id } = req.params;
 
-  if (!id || isNaN(Number(id))) {
+  // ID теперь текстовый: "12345_en" или "S67890_ch"
+  if (!id || typeof id !== 'string' || id.length < 3) {
     return res.status(400).json({ error: 'Некорректный ID автомобиля' });
   }
 
   try {
     const { rows } = await pool.query(
-      'SELECT json, hp FROM encar_webcatalog WHERE id = $1',
+      'SELECT id, json, hp, source, yearmonth_raw, year, url FROM auto_webcatalog WHERE id = $1',
       [id]
     );
 
@@ -26,10 +27,16 @@ export const getCarDetails = async (req, res) => {
       return res.status(404).json({ error: 'Автомобиль не найден' });
     }
 
-    // Добавляем hp из колонки в ответ (для проверки "нет л.с.")
+    const row = rows[0];
+    // Добавляем hp, source и yearmonth_raw в ответ
     const result = {
-      ...rows[0].json,
-      hp: rows[0].hp ?? 0
+      ...row.json,
+      car_id: row.id,                    // ID с суффиксом (_en / _ch)
+      hp: row.hp ?? 0,
+      source: row.source ?? null,
+      yearmonth_raw: row.yearmonth_raw ?? null,
+      year: row.year ?? null,
+      original_url: row.url ?? null,     // Ссылка на оригинальное объявление (Китай/Корея)
     };
 
     res.json(result);

@@ -56,6 +56,7 @@ export const MobileGallery: React.FC<MobileGalleryProps> = ({ photos, selected, 
                   className="w-full h-full object-cover cursor-pointer"
                   onClick={() => onOpenLightbox?.(i)}
                   loading={i === 0 ? 'eager' : 'lazy'}
+                  referrerPolicy="no-referrer"
                   onError={(e) => {
                     e.currentTarget.src = '/placeholder.svg';
                   }}
@@ -93,7 +94,7 @@ export const MobileGallery: React.FC<MobileGalleryProps> = ({ photos, selected, 
                 selected === i ? 'border-accent' : 'border-transparent'
               )}
             >
-              <img src={src} alt={`Миниатюра ${i + 1}`} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }} />
+              <img src={src} alt={`Миниатюра ${i + 1}`} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }} />
             </button>
           ))}
         </div>

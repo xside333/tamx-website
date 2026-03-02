@@ -16,6 +16,9 @@ export interface CatalogParams {
   page?: number;
   sortBy?: 'date_desc' | 'date_asc' | 'price_desc' | 'price_asc' | 'mileage_asc';
 
+  // Источник: 'K' = Корея, 'C' = Китай, пусто = все
+  source?: string;
+
   // Иерархия автомобилей
   brand?: string;
   model?: string; // CSV для мультиселекта
@@ -36,6 +39,9 @@ export interface CatalogParams {
   // Мультиселекты
   fuelType?: string; // CSV
   bodyColor?: string; // CSV
+
+  // Привод (fwd, rwd, awd)
+  driveType?: string;
 
   // Состояние
   noDamage?: boolean; // myaccidentcnt=0 и myaccidentcost=0

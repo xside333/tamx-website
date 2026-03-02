@@ -2,7 +2,8 @@ import React from 'react';
 import { Filters, FiltersPatch } from '../../../types';
 import { cn } from '../../../lib/utils';
 import { Button, Skeleton } from '../../atoms';
-import { Select, PriceRange, YearMonthRange, MileageRange } from '../../molecules';
+import { Select, PriceRange, YearMonthRange, MileageRange, Hint } from '../../molecules';
+import { SourceSelector } from '../../molecules/SourceSelector';
 import { useStickyFilters } from '../../../hooks/useStickyFilters';
 import { useHierarchicalFilters } from '../../../hooks/useHierarchicalFilters';
 import { resetDependentFilters } from '../../../lib/apiTransforms';
@@ -40,6 +41,13 @@ const FilterGroup: React.FC<{
   </div>
 );
 
+/** Опции привода */
+const DRIVE_TYPE_OPTIONS = [
+  { value: 'fwd', label: 'Передний' },
+  { value: 'rwd', label: 'Задний' },
+  { value: 'awd', label: 'Полный' },
+];
+
 const FiltersAside: React.FC<FiltersAsideProps> = ({
   filters,
   appliedFilters,
@@ -74,10 +82,19 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
     ? getTypesForGeneration(filters.brand, filters.model, filters.generation)
     : [];
 
+  // Проверяем: китайские или корейские авто выбраны
+  const isChinaOnly = filters.source === 'C';
+  const isKoreaOnly = filters.source === 'K';
+
   // Дефолтные диапазоны (можно улучшить, получая из API)
   const priceRange = { min: 100000, max: 50000000 };
   const yearRange = { min: 2000, max: new Date().getFullYear() };
   const mileageRange = { min: 0, max: 500000 };
+
+  const handleSourceChange = (value: string | undefined) => {
+    const newFilters = resetDependentFilters({ ...filters, source: value }, 'source');
+    onFiltersChange(newFilters);
+  };
 
   const handleBrandChange = (value: string | string[]) => {
     const brand = typeof value === 'string' ? value : undefined;
@@ -91,7 +108,6 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
     onFiltersChange(newFilters);
   };
 
-
   const handleGenerationChange = (value: string | string[]) => {
     const generation = typeof value === 'string' ? value : undefined;
     const newFilters = resetDependentFilters({ ...filters, generation }, 'generation');
@@ -100,8 +116,12 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
 
   const handleTypesChange = (value: string | string[]) => {
     const types = Array.isArray(value) ? value : [value].filter(Boolean);
-    // Types is the lowest level in hierarchy, no cascading needed
     onFiltersChange({ types });
+  };
+
+  const handleDriveTypeChange = (value: string | string[]) => {
+    const driveType = typeof value === 'string' ? (value || undefined) : undefined;
+    onFiltersChange({ driveType });
   };
 
   const handleFuelsChange = (value: string | string[]) => {
@@ -124,7 +144,6 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
 
   const handleYearFromChange = (value?: number) => {
     const newFilters: FiltersPatch = { yearFrom: value };
-    // При сбросе года сбрасываем месяц "от"
     if (!value) {
       newFilters.monthFrom = undefined;
     }
@@ -133,7 +152,6 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
 
   const handleYearToChange = (value?: number) => {
     const newFilters: FiltersPatch = { yearTo: value };
-    // При сбросе года сбрасываем месяц "до"
     if (!value) {
       newFilters.monthTo = undefined;
     }
@@ -198,7 +216,6 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
         {...props}
       >
         <div className="space-y-6">
-          {/* Skeleton для фильтров */}
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="bg-surface rounded-xl p-5 space-y-4">
               <Skeleton className="h-4 w-24" />
@@ -236,6 +253,31 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
     );
   }
 
+  /**
+   * Обёртка для фильтров с ограниченной доступностью.
+   * showHint — показывать тултип (по умолчанию = disabled).
+   */
+  const FilterWithTooltip: React.FC<{
+    disabled: boolean;
+    tooltip: string;
+    showHint?: boolean;
+    sideOffset?: number;
+    children: React.ReactElement;
+  }> = ({ disabled, tooltip, showHint, sideOffset, children }) => {
+    const shouldShowHint = showHint !== undefined ? showHint : disabled;
+    if (!shouldShowHint) return children;
+    return (
+      <Hint
+        content={<span className="text-xs">{tooltip}</span>}
+        groupId="filter-hints"
+        delayDuration={150}
+        sideOffset={sideOffset ?? 8}
+      >
+        <div>{children}</div>
+      </Hint>
+    );
+  };
+
   return (
     <aside
       ref={containerRef}
@@ -248,6 +290,13 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
         onReset={() => onResetGroup('car')}
       >
         <div className="space-y-3">
+          {/* Фильтр страны: Все / Корея / Китай */}
+          <SourceSelector
+            value={filters.source}
+            onChange={handleSourceChange}
+            disabled={isFiltersLoading}
+          />
+
           <Select
             options={brandOptions}
             value={filters.brand}
@@ -266,22 +315,34 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
             disabled={isFiltersLoading || !filters.brand}
           />
 
-          <Select
-            options={generationOptions}
-            value={filters.generation}
-            onChange={handleGenerationChange}
-            placeholder="Поколение"
-            disabled={isFiltersLoading || !filters.model}
-          />
+          {/* Поколение — только для Кореи */}
+          <FilterWithTooltip
+            disabled={isChinaOnly}
+            tooltip="Фильтр доступен только для авто из Кореи"
+          >
+            <Select
+              options={generationOptions}
+              value={filters.generation}
+              onChange={handleGenerationChange}
+              placeholder="Поколение"
+              disabled={isFiltersLoading || !filters.model || isChinaOnly}
+            />
+          </FilterWithTooltip>
 
-          <Select
-            options={typeOptions}
-            value={filters.types}
-            onChange={handleTypesChange}
-            placeholder="Комплектация"
-            multiple
-            disabled={isFiltersLoading || !filters.generation}
-          />
+          {/* Комплектация — только для Кореи */}
+          <FilterWithTooltip
+            disabled={isChinaOnly}
+            tooltip="Фильтр доступен только для авто из Кореи"
+          >
+            <Select
+              options={typeOptions}
+              value={filters.types}
+              onChange={handleTypesChange}
+              placeholder="Комплектация"
+              multiple
+              disabled={isFiltersLoading || !filters.generation || isChinaOnly}
+            />
+          </FilterWithTooltip>
         </div>
       </FilterGroup>
 
@@ -350,6 +411,27 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
           multiple
           disabled={isFiltersLoading}
         />
+      </FilterGroup>
+
+      {/* Привод — доступен только для китайских авто */}
+      <FilterGroup
+        title="Привод"
+        onReset={() => onFiltersChange({ driveType: undefined })}
+      >
+        <FilterWithTooltip
+          disabled={isKoreaOnly}
+          showHint={!isChinaOnly}
+          tooltip="Фильтр доступен только для китайских авто"
+          sideOffset={2}
+        >
+          <Select
+            options={DRIVE_TYPE_OPTIONS}
+            value={filters.driveType}
+            onChange={handleDriveTypeChange}
+            placeholder="Привод"
+            disabled={isFiltersLoading || isKoreaOnly}
+          />
+        </FilterWithTooltip>
       </FilterGroup>
 
       {/* Color Filter Group */}

@@ -113,6 +113,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ car, carData }) => {
               alt={`${car?.name ?? 'Авто'} - фото ${selectedPhoto + 1}`}
               className="w-full h-full object-cover cursor-pointer"
               loading="eager"
+              referrerPolicy="no-referrer"
               onClick={() => openLightbox(selectedPhoto)}
               onError={(e) => {
                 e.currentTarget.src = '/placeholder.svg';
@@ -144,7 +145,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ car, carData }) => {
                     selectedPhoto === actualIndex ? 'border-accent' : 'border-transparent hover:border-border'
                   )}
                 >
-                  <img src={photo} alt={`Превью ${actualIndex + 1}`} className="w-full h-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }} />
+                  <img src={photo} alt={`Превью ${actualIndex + 1}`} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }} />
                   {selectedPhoto !== actualIndex && <div className="absolute inset-0 bg-black/20" />}
                 </button>
               );
@@ -224,6 +225,7 @@ export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ car, carData }) => {
                           alt={`${car?.name ?? 'Авто'} - фото ${index + 1}`}
                           draggable={false}
                           className="block object-contain mx-auto w-full sm:w-auto"
+                          referrerPolicy="no-referrer"
                           style={{height: 'auto', ...maxImgStyle }}
                           onError={(e) => {
                             e.currentTarget.src = '/placeholder.svg';

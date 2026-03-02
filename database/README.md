@@ -4,5 +4,3 @@ sudo -u postgres psql encar_local_db
 
 2.  USER encaruser 
     PASSWORD jOsbdJSDH37
-
-3. 

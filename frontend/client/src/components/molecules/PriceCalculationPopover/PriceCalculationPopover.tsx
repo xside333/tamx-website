@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '../../../lib/utils';
 import {
-  getKoreaPriceRUB,
-  getKoreaExpensesRUB,
+  getCountryPriceRUB,
+  getCountryExpensesRUB,
+  getCountryPriceLabel,
+  getCountryExpensesLabel,
   getCustomsDuty,
   getUtilFee,
   getBrokerFee,
@@ -152,8 +154,8 @@ export const PriceCalculationPopover: React.FC<PriceCalculationPopoverProps> = (
             </div>
             {/* Price Breakdown */}
             <div className="space-y-4 mb-4 max-h-[70vh] overflow-y-auto">
-              <PriceRow label="Стоимость авто в Корее" value={getKoreaPriceRUB(carData)} />
-              <PriceRow label="Расходы в Корее" value={getKoreaExpensesRUB(carData)} />
+              <PriceRow label={getCountryPriceLabel(carData)} value={getCountryPriceRUB(carData)} />
+              <PriceRow label={getCountryExpensesLabel(carData)} value={getCountryExpensesRUB(carData)} />
               <PriceRow label="Таможенная ставка" value={getCustomsDuty(carData)} />
               <PriceRow label="Утилизационный сбор" value={getUtilFee(carData)} />
               <PriceRow label="Услуги во Владивостоке" value={getBrokerFee(carData)} />
@@ -187,8 +189,8 @@ export const PriceCalculationPopover: React.FC<PriceCalculationPopoverProps> = (
 
         {/* Price Breakdown */}
         <div className="space-y-4 mb-6">
-          <PriceRow label="Стоимость авто в Корее" value={getKoreaPriceRUB(carData)} />
-          <PriceRow label="Расходы в Корее" value={getKoreaExpensesRUB(carData)} />
+          <PriceRow label={getCountryPriceLabel(carData)} value={getCountryPriceRUB(carData)} />
+          <PriceRow label={getCountryExpensesLabel(carData)} value={getCountryExpensesRUB(carData)} />
           <PriceRow label="Таможенная ставка" value={getCustomsDuty(carData)} />
           <PriceRow label="Утилизационный сбор" value={getUtilFee(carData)} />
           <PriceRow label="Услуги во Владивостоке" value={getBrokerFee(carData)} />

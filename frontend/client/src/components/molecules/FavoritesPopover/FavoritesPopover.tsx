@@ -104,6 +104,7 @@ const FavoritesPopover: React.FC<FavoritesPopoverProps> = ({
                           src={car.photos?.[0] || '/placeholder.svg'}
                           alt={car.name || 'Автомобиль'}
                           className="w-16 h-16 object-cover rounded-lg"
+                          referrerPolicy="no-referrer"
                         />
                       </div>
 

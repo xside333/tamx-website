@@ -30,6 +30,8 @@ import {
   getAccidentCostKRW,
   getAccidentCostRUB,
   processDetailPhotos,
+  isChina,
+  getSimulatedTotal,
   type CarDetailData
 } from '../lib/carDetailTransforms';
 
@@ -208,7 +210,7 @@ const CarTitleSection: React.FC<{ car: any; carData: CarDetailData; isFavoriteFn
   let statusTitle = car.status?.label || '';
   let statusTooltip = '';
   if (typeof monthsToPass === 'number' && monthsToPass > 0) {
-    const simulatedTotal = (carData as any)?.simulated?.usdt?.total || 0;
+    const simulatedTotal = getSimulatedTotal(carData);
     statusTitle = `${formatPrice(Math.round(simulatedTotal))} через ${monthsToPass} мес.`;
     statusTooltip = `Через ${monthsToPass} месяца автомобиль станет проходным и будет оформляться по льготной ставке. Сейчас для него действует высокая таможенная пошлина.`;
   } else if (statusType === 'rate-3-5') {
@@ -411,6 +413,7 @@ const SpecificationsSection: React.FC<{ car: any; carData: CarDetailData }> = ({
   const [activeTab, setActiveTab] = useState('specs');
   const accidentStatus = getAccidentStatus(carData);
   const isAccidentFree = accidentStatus === 'Без ДТП';
+  const isChinaCar = isChina(carData);
 
   return (
     <section className="bg-surface rounded-lg lg:rounded-[32px] p-4 lg:p-8">
@@ -427,17 +430,19 @@ const SpecificationsSection: React.FC<{ car: any; carData: CarDetailData }> = ({
           >
             Информация об авто
           </button>
-          <button
-            className={cn(
-              "detail-tab text-sm font-medium tracking-wide pb-4 transition-colors whitespace-nowrap",
-              activeTab === 'accidents'
-                ? "text-primary border-b-4 border-accent"
-                : "text-secondary opacity-50 hover:opacity-100 hover:text-primary"
-            )}
-            onClick={() => setActiveTab('accidents')}
-          >
-            Информация о ДТП
-          </button>
+          {!isChinaCar && (
+            <button
+              className={cn(
+                "detail-tab text-sm font-medium tracking-wide pb-4 transition-colors whitespace-nowrap",
+                activeTab === 'accidents'
+                  ? "text-primary border-b-4 border-accent"
+                  : "text-secondary opacity-50 hover:opacity-100 hover:text-primary"
+              )}
+              onClick={() => setActiveTab('accidents')}
+            >
+              Информация о ДТП
+            </button>
+          )}
         </div>
       </div>
 
@@ -445,7 +450,7 @@ const SpecificationsSection: React.FC<{ car: any; carData: CarDetailData }> = ({
         <CarInfo carData={carData} />
       )}
 
-      {activeTab === 'accidents' && (
+      {activeTab === 'accidents' && !isChinaCar && (
         <div className="space-y-6">
           <div className="flex items-center space-x-3">
             <Icon name={isAccidentFree ? "check-circle" : "alert-triangle"}

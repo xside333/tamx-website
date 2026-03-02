@@ -118,6 +118,18 @@ export function getFuelLabel(fuel: string): string {
   return fuel || 'Не указано';
 }
 
+// Метка привода на русском
+const DRIVE_TYPE_LABELS: Record<string, string> = {
+  fwd: 'Передний',
+  rwd: 'Задний',
+  awd: 'Полный',
+};
+
+export function getDriveTypeLabel(driveType?: string): string | undefined {
+  if (!driveType) return undefined;
+  return DRIVE_TYPE_LABELS[driveType] ?? driveType;
+}
+
 // Get status badge variant
 export function getStatusVariant(statusType: string): string {
   const variants: Record<string, string> = {

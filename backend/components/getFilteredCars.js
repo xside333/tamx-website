@@ -9,14 +9,20 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
+/**
+ * Единый endpoint для фильтрации авто из auto_webcatalog
+ * Поддерживает оба источника: Корея (K) и Китай (C)
+ */
 export async function getFilteredCars(req, res) {
   const {
+    source,
     brand, model, generation, type,
     yearFrom, monthFrom, yearTo, monthTo,
     priceFrom, priceTo,
     mileageFrom, mileageTo,
-    hpTo,
+    hpFrom, hpTo,
     fuelType, bodyColor,
+    transmission, bodyType, driveType,
     noDamage, category,
     page, sortBy
   } = req.query;
@@ -25,18 +31,58 @@ export async function getFilteredCars(req, res) {
   const params = [];
   let paramIndex = 1;
 
+  // Источник (K = Корея, C = Китай, пусто = все)
+  if (source && (source === 'K' || source === 'C')) {
+    conditions.push(`source = $${paramIndex++}`);
+    params.push(source);
+  }
+
+  // Марка
+  if (brand) {
+    conditions.push(`brand = $${paramIndex++}`);
+    params.push(brand);
+  }
+
+  // Модель
+  if (model) {
+    conditions.push(`model = $${paramIndex++}`);
+    params.push(model);
+  }
+
+  // Поколение (только encar) — автоматически ограничиваем корейскими авто
+  if (generation) {
+    conditions.push(`generation = $${paramIndex++}`);
+    params.push(generation);
+    if (!source) {
+      conditions.push(`source = 'K'`);
+    }
+  }
+
+  // Комплектация (только encar) — автоматически ограничиваем корейскими авто
+  if (type) {
+    const grades = type.split(',').map(v => v.trim()).filter(Boolean);
+    if (grades.length > 0) {
+      const placeholders = grades.map(() => `$${paramIndex++}`).join(',');
+      conditions.push(`grade_en IN (${placeholders})`);
+      params.push(...grades);
+      if (!source) {
+        conditions.push(`source = 'K'`);
+      }
+    }
+  }
+
   // Год и месяц "от"
   if (yearFrom) {
     const ymFrom = `${yearFrom}${monthFrom ? monthFrom.padStart(2, '0') : '01'}`;
-    conditions.push(`(COALESCE(yearmonth_prod, yearmonth)::int >= $${paramIndex++})`);
-    params.push(parseInt(ymFrom));
+    conditions.push(`yearmonth_raw >= $${paramIndex++}`);
+    params.push(ymFrom);
   }
 
   // Год и месяц "до"
   if (yearTo) {
     const ymTo = `${yearTo}${monthTo ? monthTo.padStart(2, '0') : '12'}`;
-    conditions.push(`(COALESCE(yearmonth_prod, yearmonth)::int <= $${paramIndex++})`);
-    params.push(parseInt(ymTo));
+    conditions.push(`yearmonth_raw <= $${paramIndex++}`);
+    params.push(ymTo);
   }
 
   // Цена от и до
@@ -59,62 +105,72 @@ export async function getFilteredCars(req, res) {
     params.push(parseInt(mileageTo));
   }
 
-  // HP до (фильтр "до 160 л.с.")
+  // HP от и до
+  if (hpFrom) {
+    conditions.push(`hp > 0 AND hp >= $${paramIndex++}`);
+    params.push(parseInt(hpFrom));
+  }
   if (hpTo) {
     conditions.push(`hp > 0 AND hp <= $${paramIndex++}`);
     params.push(parseInt(hpTo));
   }
 
-  // Марка, модель, поколение
-  if (brand) {
-    conditions.push(`manufacturerenglishname = $${paramIndex++}`);
-    params.push(brand);
-  }
-  if (model) {
-    conditions.push(`modelgroupenglishname = $${paramIndex++}`);
-    params.push(model);
-  }
-  if (generation) {
-    conditions.push(`modelname = $${paramIndex++}`);
-    params.push(generation);
-  }
-
-  // Тип (gradeenglishname) — поддержка нескольких значений
-  if (type) {
-    const grades = type.split(',').map(v => v.trim()).filter(Boolean);
-    if (grades.length > 0) {
-      const placeholders = grades.map(() => `$${paramIndex++}`).join(',');
-      conditions.push(`gradeenglishname IN (${placeholders})`);
-      params.push(...grades);
-    }
-  }
-
-  // Топливо (fuelfilter)
+  // Топливо (fuel_filter)
   if (fuelType) {
     const fuels = fuelType.split(',').map(v => v.trim()).filter(Boolean);
     if (fuels.length > 0) {
       const placeholders = fuels.map(() => `$${paramIndex++}`).join(',');
-      conditions.push(`fuelfilter IN (${placeholders})`);
+      conditions.push(`fuel_filter IN (${placeholders})`);
       params.push(...fuels);
     }
   }
 
-  // Цвет кузова (colorfilter)
+  // Цвет кузова (color_filter)
   if (bodyColor) {
     const colors = bodyColor.split(',').map(v => v.trim()).filter(Boolean);
     if (colors.length > 0) {
       const placeholders = colors.map(() => `$${paramIndex++}`).join(',');
-      conditions.push(`colorfilter IN (${placeholders})`);
+      conditions.push(`color_filter IN (${placeholders})`);
       params.push(...colors);
     }
   }
 
-  // No damage
-  if (noDamage === 'true') {
-    conditions.push(`myaccidentcnt = 0 AND myaccidentcost = 0`);
+  // Трансмиссия
+  if (transmission) {
+    const trans = transmission.split(',').map(v => v.trim()).filter(Boolean);
+    if (trans.length > 0) {
+      const placeholders = trans.map(() => `$${paramIndex++}`).join(',');
+      conditions.push(`transmission IN (${placeholders})`);
+      params.push(...trans);
+    }
   }
 
-  // Категория (новый фильтр)
+  // Тип кузова (только che168)
+  if (bodyType) {
+    const types = bodyType.split(',').map(v => v.trim()).filter(Boolean);
+    if (types.length > 0) {
+      const placeholders = types.map(() => `$${paramIndex++}`).join(',');
+      conditions.push(`body_type IN (${placeholders})`);
+      params.push(...types);
+    }
+  }
+
+  // Привод (drive_type)
+  if (driveType) {
+    const drives = driveType.split(',').map(v => v.trim()).filter(Boolean);
+    if (drives.length > 0) {
+      const placeholders = drives.map(() => `$${paramIndex++}`).join(',');
+      conditions.push(`drive_type IN (${placeholders})`);
+      params.push(...drives);
+    }
+  }
+
+  // Без повреждений (только encar)
+  if (noDamage === 'true') {
+    conditions.push(`(accident_count = 0 OR accident_count IS NULL) AND (accident_cost = 0 OR accident_cost IS NULL)`);
+  }
+
+  // Категория
   if (category) {
     const categories = category.split(',').map(v => v.trim()).filter(Boolean);
     if (categories.length > 0) {
@@ -131,34 +187,34 @@ export async function getFilteredCars(req, res) {
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
   // Сортировка
-  let orderClause = 'ORDER BY firstadvertiseddatetime DESC';
+  let orderClause = 'ORDER BY offer_date DESC NULLS LAST';
   switch (sortBy) {
     case 'date_asc':
-      orderClause = 'ORDER BY firstadvertiseddatetime ASC';
+      orderClause = 'ORDER BY offer_date ASC NULLS LAST';
       break;
     case 'price_asc':
-      orderClause = 'ORDER BY totalprice_rub ASC';
+      orderClause = 'ORDER BY totalprice_rub ASC NULLS LAST';
       break;
     case 'price_desc':
-      orderClause = 'ORDER BY totalprice_rub DESC';
+      orderClause = 'ORDER BY totalprice_rub DESC NULLS LAST';
       break;
     case 'mileage_asc':
-      orderClause = 'ORDER BY mileage ASC';
+      orderClause = 'ORDER BY mileage ASC NULLS LAST';
       break;
     default:
-      orderClause = 'ORDER BY firstadvertiseddatetime DESC';
+      orderClause = 'ORDER BY offer_date DESC NULLS LAST';
       break;
   }
 
   const query = `
-    SELECT json, hp FROM encar_webcatalog
+    SELECT id, source, json, hp, drive_type, year, yearmonth_raw FROM auto_webcatalog
     ${whereClause}
     ${orderClause}
     LIMIT ${limit} OFFSET ${offset};
   `;
 
   const totalCountQuery = `
-    SELECT COUNT(*) FROM encar_webcatalog ${whereClause};
+    SELECT COUNT(*) FROM auto_webcatalog ${whereClause};
   `;
 
   try {
@@ -170,10 +226,14 @@ export async function getFilteredCars(req, res) {
     client.release();
 
     const totalcars = parseInt(totalCountResult.rows[0].count, 10);
-    // Добавляем hp из колонки в каждый json
     const cars = rows.map(row => ({
       ...row.json,
-      hp: row.hp ?? 0
+      car_id: row.id,
+      source: row.source,
+      hp: row.hp ?? 0,
+      drive_type: row.drive_type ?? null,
+      year: row.year ?? null,
+      yearmonth_raw: row.yearmonth_raw ?? null,
     }));
 
     res.json({ totalcars, cars });

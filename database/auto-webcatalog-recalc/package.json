@@ -1,0 +1,16 @@
+{
+  "name": "auto-webcatalog-recalc",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node --expose-gc src/index.js",
+    "migrate": "node src/migrate.js"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1",
+    "pg": "^8.16.3",
+    "undici": "^7.16.0"
+  }
+}

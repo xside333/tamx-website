@@ -17,5 +17,6 @@ export { FavoriteToggle } from './FavoriteToggle';
 export { Hint } from './Hint';
 export { CarInfo } from './CarInfo';
 export { TradeInButton } from './TradeInButton';
+export { SourceSelector } from './SourceSelector';
 
 export type { SelectProps } from '../../types';

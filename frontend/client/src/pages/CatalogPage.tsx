@@ -141,6 +141,7 @@ const CatalogPage: React.FC = () => {
 
     switch (group) {
       case 'car':
+        resetUpdates.source = undefined;
         resetUpdates.brand = undefined;
         resetUpdates.model = undefined;
         resetUpdates.generation = undefined;

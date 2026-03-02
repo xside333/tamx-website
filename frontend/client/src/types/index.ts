@@ -26,6 +26,10 @@ export interface Car {
   createdAt?: string;
   firstadvertiseddatetime?: string;
   
+  // Источник и привод
+  source?: string;   // 'K' = Корея, 'C' = Китай
+  driveType?: string; // fwd, rwd, awd
+
   // Поля повреждений
   myaccidentcnt?: number;
   myaccidentcost?: number;
@@ -43,6 +47,9 @@ export type StatusType = 'rate-3-5' | 'rate-5-plus' | 'rate-0-3';
 
 // Filter Types
 export interface Filters {
+  // Источник: '' = все, 'K' = Корея, 'C' = Китай
+  source?: string;
+
   // Иерархия
   brand?: string;
   model?: string; // CSV сорока для API
@@ -69,6 +76,9 @@ export interface Filters {
   colors: string[]; // Из constants.ts
   fuelType?: string; // CSV строка для API
   bodyColor?: string; // CSV строка для API
+
+  // Привод (fwd, rwd, awd) — только для Китая
+  driveType?: string;
 
   // Состояние
   noDamage?: boolean; // accidentFree в UI

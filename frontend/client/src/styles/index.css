@@ -787,6 +787,107 @@
     border-radius: var(--radius-lg);
   }
 
+  /* Source Selector (Country filter: Все / Корея / Китай) */
+  .source-selector {
+    display: flex;
+    gap: var(--space-1);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-md);
+    padding: var(--space-1);
+  }
+  .source-selector__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--anim-fast) var(--easing-standard);
+    white-space: nowrap;
+  }
+  .source-selector__item:hover:not(:disabled) {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+  }
+  .source-selector__item--active {
+    background-color: var(--color-surface) !important;
+    color: var(--color-text-primary) !important;
+    box-shadow: var(--shadow-sm);
+    font-weight: var(--font-weight-bold);
+  }
+  .source-selector__item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .source-selector__icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .source-selector__label {
+    line-height: 1;
+  }
+
+  /* Filter tooltip for restricted filters */
+  .filter-tooltip-wrap {
+    position: relative;
+  }
+  .filter-tooltip-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    background: var(--color-muted);
+    border-radius: var(--radius-xs);
+    margin-top: var(--space-1);
+    white-space: nowrap;
+  }
+
+  /* Drive type selector */
+  .drive-type-selector {
+    display: flex;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+  }
+  .drive-type-selector__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-divider);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all var(--anim-fast) var(--easing-standard);
+    flex: 1;
+    min-width: 0;
+  }
+  .drive-type-selector__item:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    color: var(--color-text-primary);
+  }
+  .drive-type-selector__item--active {
+    border-color: var(--color-accent) !important;
+    background-color: rgba(215, 46, 54, 0.06) !important;
+    color: var(--color-accent) !important;
+    font-weight: var(--font-weight-medium);
+  }
+  .drive-type-selector__item:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
   /* Safe area bottom offset utility (10px) */
   .bottom-safe-10 {
     bottom: calc(0px + env(safe-area-inset-bottom));

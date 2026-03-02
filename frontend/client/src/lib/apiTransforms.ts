@@ -21,11 +21,18 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
 
   let id: string | number | undefined;
 
-  // Ищем ID в основном объекте apiCar
-  for (const field of possibleIdFields) {
-    if (apiCar && apiCar[field as keyof typeof apiCar]) {
-      id = apiCar[field as keyof typeof apiCar] as string | number;
-      break;
+  // Сначала ищем car_id в обертке (там ID с суффиксом _en / _ch)
+  if (apiCarWrapper && (apiCarWrapper as any).car_id) {
+    id = (apiCarWrapper as any).car_id;
+  }
+
+  // Если не найден, ищем в основном объекте apiCar
+  if (!id) {
+    for (const field of possibleIdFields) {
+      if (apiCar && apiCar[field as keyof typeof apiCar]) {
+        id = apiCar[field as keyof typeof apiCar] as string | number;
+        break;
+      }
     }
   }
 
@@ -48,38 +55,47 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
   }
   
   // Формируем название автомобиля
-  // Новое API использует modelname, получаем со старого для совместимости
-  const manufacturerName = apiCar.manufacturerenglishname || '';
-  const modelName = apiCar.modelgroupenglishname || apiCar.modelname || '';
+  // Корейские: manufacturerenglishname + modelgroupenglishname + gradeenglishname
+  // Китайские: brand + model (из meta)
+  const manufacturerName = apiCar.manufacturerenglishname || (apiCar as any).brand || '';
+  const modelName = apiCar.modelgroupenglishname || (apiCar as any).model || apiCar.modelname || '';
   const gradeName = apiCar.gradeenglishname || '';
   const name = [manufacturerName, modelName, gradeName].filter(Boolean).join(' ') || apiCar.modelname || 'Неизвестный автомобиль';
   
-  // Обрабатываем фото с использованием новой логики фильтрации и ci.encar.com
+  // Обрабатываем фото с использованием новой логики фильтрации
   let photos: string[] = [];
 
-  // Поддерживаем оба варианта: photos и photo_paths
+  // Поддерживаем оба варианта: photos (строки/объекты) и photo_paths (объекты)
   const photoSource = (apiCar as any).photos || apiCar.photo_paths;
   
   if (photoSource && photoSource.length > 0) {
-    // Преобразуем в нужный формат (поддерживаем разные варианты API)
-    const photoPaths: PhotoPath[] = photoSource.map((photo: any) => ({
-      code: photo.code || photo.cod,
-      path: photo.path
-    }));
-
-    // Используем новую логику фильтрации для каталога (001, 002, 003, 007)
-    photos = filterAndSortCatalogPhotos(photoPaths);
+    // Если элементы — строки (URL), значит китайские авто
+    if (typeof photoSource[0] === 'string') {
+      photos = photoSource.slice(0, 4); // Берём первые 4 для каталога
+    } else {
+      // Корейские авто — массив объектов { code, path }
+      const photoPaths: PhotoPath[] = photoSource.map((photo: any) => ({
+        code: photo.code || photo.cod,
+        path: photo.path
+      }));
+      photos = filterAndSortCatalogPhotos(photoPaths);
+    }
   } else if (apiCar.photo_outer) {
-    // Поддержка старого формата API
     photos = [apiCar.photo_outer];
   } else {
-    // Placeholder если нет фото
     photos = ['/placeholder.svg'];
   }
   
+  // Определяем источник: K = Корея, C = Китай
+  const carSource = (apiCarWrapper as any).source || (apiCarWrapper as any).meta?.source || '';
+
   // Определяем статус на основе monthsToPass и category
+  // Для корейских авто: current.usdt.customs.category
+  // Для китайских авто: current.customs.category
   let status: Car['status'];
-  const category = apiCarWrapper.current?.usdt?.customs?.category;
+  const category = carSource === 'C'
+    ? (apiCarWrapper as any).current?.customs?.category
+    : apiCarWrapper.current?.usdt?.customs?.category;
   const monthsToPass = apiCarWrapper.simulated?.monthsToPass;
 
   if (category) {
@@ -92,7 +108,10 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
     // Если есть monthsToPass, то всегда показываем сумму из simulated и срок
     if (monthsToPass && monthsToPass > 0) {
       statusType = 'rate-0-3';
-      const simTotal = (apiCarWrapper as any)?.simulated?.usdt?.total || 0;
+      // Для китайских авто simulated.total на верхнем уровне, для корейских simulated.usdt.total
+      const simTotal = carSource === 'C'
+        ? ((apiCarWrapper as any)?.simulated?.total || 0)
+        : ((apiCarWrapper as any)?.simulated?.usdt?.total || 0);
       statusLabel = `${new Intl.NumberFormat('ru-RU').format(Math.round(simTotal))} ₽ через ${monthsToPass} мес.`;
     }
     // Если нет monthsToPass, но статус rate_0_3, то "Высокая ставка"
@@ -127,16 +146,22 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
   // Проверяем статус ДТП
   const accidentFree = (apiCar.myaccidentcnt === 0) && (apiCar.myaccidentcost === 0);
   
-  // Определяем год и месяц (новое API используем yearmonth)
-  let year = apiCar.year || new Date().getFullYear();
+  // Определяем год и месяц
+  // yearmonth_raw и year приходят из колонок таблицы (на верхнем уровне wrapper)
+  const ymRaw = (apiCarWrapper as any).yearmonth_raw ?? apiCar.yearmonth;
+  let year = (apiCarWrapper as any).year ?? apiCar.year ?? 0;
   let month = apiCar.month;
 
-  if (apiCar.yearmonth) {
-    const yearMonthStr = apiCar.yearmonth.toString();
+  if (ymRaw) {
+    const yearMonthStr = ymRaw.toString();
     if (yearMonthStr.length === 6) {
       year = parseInt(yearMonthStr.substring(0, 4));
       month = parseInt(yearMonthStr.substring(4, 6));
     }
+  }
+
+  if (!year) {
+    year = new Date().getFullYear();
   }
 
   // Формируем двигатель
@@ -152,7 +177,9 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
     model: modelName,
     generation: '', // TODO: получать из API если будет доступно
     trim: gradeName,
-    price: apiCarWrapper.current?.usdt?.total || 0,
+    price: carSource === 'C'
+      ? ((apiCarWrapper as any).current?.total || 0)
+      : (apiCarWrapper.current?.usdt?.total || 0),
     year,
     month,
     mileage: apiCar.mileage || 0,
@@ -166,6 +193,8 @@ export function transformApiCarToCar(apiCarWrapper: ApiCarWrapper | ApiCar): Car
     status,
     accidentFree,
     color,
+    source: carSource || undefined,
+    driveType: (apiCarWrapper as any).drive_type || (apiCar as any).drive_type || undefined,
     firstadvertiseddatetime: apiCar.firstadvertiseddatetime,
     myaccidentcnt: apiCar.myaccidentcnt,
     myaccidentcost: apiCar.myaccidentcost,
@@ -180,6 +209,11 @@ export function transformFiltersToApiParams(filters: Filters, page: number = 1, 
     page,
     sortBy: sortBy as any,
   };
+
+  // Источник (Корея/Китай/Все)
+  if (filters.source) {
+    params.source = filters.source;
+  }
 
   // Иерархия
   if (filters.brand) {
@@ -223,6 +257,11 @@ export function transformFiltersToApiParams(filters: Filters, page: number = 1, 
     params.category = filters.categories.join(',');
   }
 
+  // Привод
+  if (filters.driveType) {
+    params.driveType = filters.driveType;
+  }
+
   // Состояние
   if (filters.noDamage) {
     params.noDamage = true;
@@ -242,6 +281,10 @@ export function transformUrlParamsToFilters(searchParams: URLSearchParams): Filt
     colors: [],
     categories: [],
   };
+
+  // Источник
+  const source = searchParams.get('source');
+  if (source) filters.source = source;
 
   // Иерархия
   const brand = searchParams.get('brand');
@@ -288,6 +331,10 @@ export function transformUrlParamsToFilters(searchParams: URLSearchParams): Filt
   const bodyColor = searchParams.get('bodyColor');
   if (bodyColor) filters.colors = bodyColor.split(',').filter(Boolean);
   
+  // Привод
+  const driveType = searchParams.get('driveType');
+  if (driveType) filters.driveType = driveType;
+
   // Состояние
   const noDamage = searchParams.get('noDamage');
   if (noDamage === 'true') filters.noDamage = true;
@@ -304,6 +351,9 @@ export function transformUrlParamsToFilters(searchParams: URLSearchParams): Filt
  */
 export function transformFiltersToUrlParams(filters: Filters): URLSearchParams {
   const params = new URLSearchParams();
+
+  // Источник
+  if (filters.source) params.set('source', filters.source);
 
   // Иерархия
   if (filters.brand) params.set('brand', filters.brand);
@@ -325,6 +375,9 @@ export function transformFiltersToUrlParams(filters: Filters): URLSearchParams {
   if (filters.fuels.length > 0) params.set('fuelType', filters.fuels.join(','));
   if (filters.colors.length > 0) params.set('bodyColor', filters.colors.join(','));
 
+  // Привод
+  if (filters.driveType) params.set('driveType', filters.driveType);
+
   // Категории растаможки
   if (filters.categories && filters.categories.length > 0) params.set('category', filters.categories.join(','));
 
@@ -341,6 +394,15 @@ export function resetDependentFilters(filters: Filters, changedField: keyof Filt
   const newFilters = { ...filters };
 
   switch (changedField) {
+    case 'source':
+      // При изменении источника сбрасываем всю иерархию и привод
+      newFilters.brand = undefined;
+      newFilters.model = undefined;
+      newFilters.generation = undefined;
+      newFilters.types = [];
+      newFilters.driveType = undefined;
+      break;
+
     case 'brand':
       // При изменении бренда сбрасываем модель, поколение, тип
       newFilters.model = undefined;

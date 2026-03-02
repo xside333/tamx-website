@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Car } from '../../../types';
-import { cn, formatPrice, formatMileage, getFuelLabel, computeDefaultMonthlyPayment } from '../../../lib/utils';
+import { cn, formatPrice, formatMileage, getFuelLabel, getDriveTypeLabel, computeDefaultMonthlyPayment } from '../../../lib/utils';
 import { Badge, Icon, Button } from '../../atoms';
 import { LeadModal, FavoriteToggle } from '../../molecules';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -121,6 +121,7 @@ const CarCard: React.FC<CarCardProps> = ({
             alt={car.name}
             className="w-full h-[234px] object-cover rounded-xl"
             loading="lazy"
+            referrerPolicy="no-referrer"
             onError={(e) => {
               e.currentTarget.src = '/placeholder.svg';
             }}
@@ -161,6 +162,7 @@ const CarCard: React.FC<CarCardProps> = ({
                     alt={`${car.name} - фото ${index + 1}`}
                     className="w-full h-[234px] object-cover rounded-xl"
                     loading="lazy"
+                    referrerPolicy="no-referrer"
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder.svg';
                     }}
@@ -241,7 +243,7 @@ const CarCard: React.FC<CarCardProps> = ({
         {/* Car specs */}
         <div className="text-sm text-primary mb-3">
           <span>
-            {car.year}, {formatMileage(car.mileage)}, {getFuelLabel(car.fuel)}, {car.engine}{car.hp ? <span className="whitespace-nowrap"> / {car.hp} л.с.</span> : ''}
+            {car.year}, {formatMileage(car.mileage)}, {getFuelLabel(car.fuel)}, {car.engine}{car.source === 'C' && car.driveType ? <>, {getDriveTypeLabel(car.driveType)}</> : ''}{car.hp ? <span className="whitespace-nowrap"> / {car.hp} л.с.</span> : ''}
           </span>
         </div>
 
