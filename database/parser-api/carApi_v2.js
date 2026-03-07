@@ -7,10 +7,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Импорт функций HP поиска из encar-webcatalog-recalc
-import { getHpFromPanAuto } from '../encar-webcatalog-recalc/src/lib/panAutoApi.js';
-import { searchHpInOpenAI } from '../encar-webcatalog-recalc/src/lib/openaiApi.js';
-import { logHpSearch } from '../encar-webcatalog-recalc/src/lib/hpLogger.js';
+// Импорт функций HP поиска из локальной lib
+import { getHpFromPanAuto } from './lib/panAutoApi.js';
+import { searchHpInOpenAI } from './lib/openaiApi.js';
+import { logHpSearch } from './lib/hpLogger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });

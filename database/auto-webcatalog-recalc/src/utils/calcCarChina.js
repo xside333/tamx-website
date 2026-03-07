@@ -16,7 +16,7 @@ export function calcCarChina(car, customsRates, utilRates, utilDecember2025, exc
   const priceCNY = car.price ?? 0;
 
   // Внутренние расходы в Китае: 15 000 CNY (логистика, оформление)
-  const INTERNAL_EXPENSES_CNY = 15000;
+  const INTERNAL_EXPENSES_CNY = 15400;
 
   const priceRUB = Math.round(priceCNY * cnyRubVtb);
   const internalExpensesRUB = Math.round(INTERNAL_EXPENSES_CNY * cnyRubVtb);
@@ -119,8 +119,8 @@ export function calcCarChina(car, customsRates, utilRates, utilDecember2025, exc
     }
   }
 
-  // Брокер: 80 000 ₽ (отличается от Кореи — 110 000 ₽)
-  const brokerFee = 80000;
+  // Брокер
+  const brokerFee = 100000;
   const totalCustom = customsClearance + duty + utilFee + brokerFee;
 
   const customs = {

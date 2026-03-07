@@ -51,8 +51,7 @@ export function calcCarFull(car, customsRates, utilRates, utilDecember2025, exch
     const BASE_UTIL_FEE = 20000; // Базовая ставка утилизационного сбора
     let utilFee = 0;
     
-    // Конвертируем displacement из см³ в литры для сравнения
-    // Например: 1999 см³ -> 1.999 л, 2394 см³ -> 2.394 л
+    // Конвертируем displacement из см3 в литры для сравнения
     const volumeInLiters = volume / 1000;
     
     // Определяем тип двигателя напрямую по корейским значениям fuelname
@@ -82,7 +81,7 @@ export function calcCarFull(car, customsRates, utilRates, utilDecember2025, exch
       // Ищем в новой таблице util_december_2025
       const utilMatch = utilDecember2025.find(r => {
         // Сравниваем возраст авто с диапазоном из таблицы
-        // Для year_from = 0: >= 0 AND < year_to (НЕ включая верхнюю границу, т.к. 3 года = проходное)
+        // Для year_from = 0: >= 0 AND < year_to (не включая верхнюю границу, т.к. 3 года = проходное)
         // Для year_from > 0: >= year_from AND <= year_to (включая обе границы)
         const ageMatch = r.year_from === 0 
           ? (ageInYears >= r.year_from && ageInYears < r.year_to)
@@ -124,7 +123,7 @@ export function calcCarFull(car, customsRates, utilRates, utilDecember2025, exch
     }
 
     const priceRUBforFee = priceKRW * krwRub;
-    const customsClearance = 100000;
+    const customsClearance = 50000;
 
     let duty = 0;
     if (customsRate.mode === "eur") {

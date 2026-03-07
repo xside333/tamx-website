@@ -1,6 +1,5 @@
 /**
  * Расчёт итоговой стоимости для корейских авто (KRW → RUB)
- * Адаптировано из encar-webcatalog-recalc/src/utils/calcCarFull_v2.js
  */
 export function calcCarKorea(car, customsRates, utilRates, utilDecember2025, exchange, customsFee, customsRate03, swiftRates, prodDate, category, hp = 0, currentYear = null, simulatedDate = null) {
   const res = {};
@@ -16,7 +15,7 @@ export function calcCarKorea(car, customsRates, utilRates, utilDecember2025, exc
     const swiftKrwRub = swiftRates.hana_rub ?? 0;
 
     const priceKRW = (car.price ?? 0) * 10000;
-    const KCLfeeKRW = 1500000;
+    const KCLfeeKRW = 2000000;
 
     let priceRUB = 0, KCLfeeRUB = 0;
 
@@ -119,7 +118,7 @@ export function calcCarKorea(car, customsRates, utilRates, utilDecember2025, exc
       }
     }
 
-    const brokerFee = 110000;
+    const brokerFee = 100000;
     const totalCustom = customsClearance + duty + utilFee + brokerFee;
 
     const customs = {
