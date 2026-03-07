@@ -3,10 +3,12 @@ import { useSearchParams } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { Button, Icon } from '../components/atoms';
 import { SortSelect, FloatingFavoritesButton, Pagination, LeadModal } from '../components/molecules';
-import { Header, Footer, CarGrid, FiltersAside } from '../components/organisms';
-import { useCars, useFavorites, useMobile } from '../hooks';
+import { Header, Footer, CarGrid, FiltersAside, ModelGrid } from '../components/organisms';
+import { useCars, useFavorites, useMobile, useCatalogModels } from '../hooks';
 import { Filters, FiltersPatch, SortOption, Car } from '../types';
 import { transformUrlParamsToFilters, transformFiltersToUrlParams } from '../lib/apiTransforms';
+
+type CatalogMode = 'ads' | 'models';
 
 const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,13 +18,18 @@ const CatalogPage: React.FC = () => {
   const [leadTitle, setLeadTitle] = useState<string | undefined>();
   const [leadBtn, setLeadBtn] = useState<string | undefined>();
   const openLead = (title: string, btn: string) => { setLeadTitle(title); setLeadBtn(btn); setLeadOpen(true); };
-  
+
+  // Режим: объявления или модели
+  const [catalogMode, setCatalogMode] = useState<CatalogMode>(() => {
+    return (searchParams.get('mode') as CatalogMode) || 'ads';
+  });
+
   // Состояние фильтров
-  const [appliedFilters, setAppliedFilters] = useState<Filters>(() => 
+  const [appliedFilters, setAppliedFilters] = useState<Filters>(() =>
     transformUrlParamsToFilters(searchParams)
   );
   const [pendingFilters, setPendingFilters] = useState<Filters>(appliedFilters);
-  
+
   // Состояние сортировки и пагинации
   const [sort, setSort] = useState<SortOption>(() => {
     const sortFromUrl = searchParams.get('sortBy') as SortOption;
@@ -33,6 +40,25 @@ const CatalogPage: React.FC = () => {
     return pageFromUrl ? parseInt(pageFromUrl) : 1;
   });
 
+  // Проверяем, заблокирован ли режим моделей (generation, type или model выбраны)
+  const isModelsModeBlocked = !!(
+    appliedFilters.generation ||
+    (appliedFilters.types && appliedFilters.types.length > 0) ||
+    appliedFilters.model
+  );
+  const isPendingModelsModeBlocked = !!(
+    pendingFilters.generation ||
+    (pendingFilters.types && pendingFilters.types.length > 0) ||
+    pendingFilters.model
+  );
+
+  // Если активен режим моделей и пришли blocking-фильтры — автоматически переключаемся
+  useEffect(() => {
+    if (catalogMode === 'models' && isModelsModeBlocked) {
+      setCatalogMode('ads');
+    }
+  }, [isModelsModeBlocked, catalogMode]);
+
   const {
     favoriteCarIds,
     toggleFavorite,
@@ -40,6 +66,7 @@ const CatalogPage: React.FC = () => {
     isFavorite,
   } = useFavorites();
 
+  // Запрос объявлений (режим ads)
   const {
     data: carsData,
     isLoading: carsLoading,
@@ -49,6 +76,22 @@ const CatalogPage: React.FC = () => {
     filters: appliedFilters,
     sort,
     page,
+    enabled: catalogMode === 'ads',
+  });
+
+  // Запрос моделей: счётчик всегда, полный список — только в режиме models
+  const {
+    data: modelsData,
+    isLoading: modelsLoading,
+    error: modelsError,
+    refetch: refetchModels,
+    totalModels: totalModelsCount,
+    totalAds: totalAdsFromModels,
+  } = useCatalogModels({
+    filters: appliedFilters,
+    page,
+    pageSize: 12,
+    loadItems: catalogMode === 'models',
   });
 
   // Синхронизация URL с фильтрами
@@ -56,9 +99,10 @@ const CatalogPage: React.FC = () => {
     const params = transformFiltersToUrlParams(appliedFilters);
     params.set('sortBy', sort);
     params.set('page', page.toString());
+    params.set('mode', catalogMode);
 
     setSearchParams(params, { replace: true });
-  }, [appliedFilters, sort, page, setSearchParams]);
+  }, [appliedFilters, sort, page, catalogMode, setSearchParams]);
 
   // Восстановление позиции скролла при возврате из детальной страницы
   useEffect(() => {
@@ -68,14 +112,12 @@ const CatalogPage: React.FC = () => {
 
       if (scrollPosition && returnTime) {
         const timeDiff = Date.now() - parseInt(returnTime);
-        // Восстанавливаем позицию только если прошло не более 10 минут
         if (timeDiff < 10 * 60 * 1000) {
           setTimeout(() => {
             window.scrollTo({ top: parseInt(scrollPosition), behavior: 'auto' });
-          }, 100); // Небольшая задержка для рендера страницы
+          }, 100);
         }
 
-        // Очищаем сохраненную позицию
         sessionStorage.removeItem('catalogScrollPosition');
         sessionStorage.removeItem('catalogReturnTime');
       }
@@ -86,17 +128,14 @@ const CatalogPage: React.FC = () => {
 
   // Обработчики
   const handleCardClick = (carId: string, e?: React.MouseEvent) => {
-    // Сохраняем позицию скролла для возврата из детальной страницы
     sessionStorage.setItem('catalogScrollPosition', window.scrollY.toString());
     sessionStorage.setItem('catalogReturnTime', Date.now().toString());
 
     const carUrl = `/car/${carId}`;
 
     if (isMobile) {
-      // На мобильном - открываем в той же вкладке
       window.location.href = carUrl;
     } else {
-      // На десктопе - открываем в новой вкладке
       if (e) {
         e.preventDefault();
       }
@@ -118,7 +157,7 @@ const CatalogPage: React.FC = () => {
 
   const handleApplyFilters = () => {
     setAppliedFilters(pendingFilters);
-    setPage(1); // Сбрасываем на первую страницу при применении фильтров
+    setPage(1);
   };
 
   const handleResetFilters = () => {
@@ -133,7 +172,6 @@ const CatalogPage: React.FC = () => {
     setAppliedFilters(emptyFilters);
     setPage(1);
     setSort('date_desc');
-    // Don't update appliedFilters - only update when "Показать" button is clicked
   };
 
   const handleResetFilterGroup = (group: string) => {
@@ -171,22 +209,44 @@ const CatalogPage: React.FC = () => {
 
     const newFilters = { ...pendingFilters, ...resetUpdates };
     setPendingFilters(newFilters);
-    // Don't update appliedFilters - only update when "Показать" button is clicked
   };
 
   const handleSortChange = (newSort: SortOption) => {
     setSort(newSort);
-    setPage(1); // Сбрасываем на первую страницу при изменении сортировки
+    setPage(1);
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    // Прокручиваем к началу страницы
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleRetry = () => {
-    refetchCars();
+    if (catalogMode === 'ads') {
+      refetchCars();
+    } else {
+      refetchModels();
+    }
+  };
+
+  const handleModeSwitch = (mode: CatalogMode) => {
+    if (mode === catalogMode) return;
+    setCatalogMode(mode);
+    setPage(1);
+  };
+
+  const handleModelClick = (brand: string, model: string) => {
+    // При клике на модель переходим в режим объявлений с фильтром по этой модели
+    const newFilters: Filters = {
+      ...appliedFilters,
+      brand,
+      model,
+      models: [model],
+    };
+    setAppliedFilters(newFilters);
+    setPendingFilters(newFilters);
+    setCatalogMode('ads');
+    setPage(1);
   };
 
   const toggleMobileFilters = () => {
@@ -235,17 +295,22 @@ const CatalogPage: React.FC = () => {
     }
   }, [isMobileFiltersOpen]);
 
-  // Проверяем, есть ли изменения в фильтрах
   const hasFiltersChanged = JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters);
 
   const cars = carsData?.cars || [];
-  const totalCount = carsData?.total || 0;
-  const totalPages = carsData?.totalPages || 1;
+  // totalAds: из объявлений если режим ads, иначе из ответа моделей (он всегда знает totalAds)
+  const totalAds = carsData?.total ?? totalAdsFromModels;
+  const adsTotalPages = carsData?.totalPages || 1;
+  const modelsTotalPages = modelsData?.totalPages || 1;
+  const currentTotalPages = catalogMode === 'ads' ? adsTotalPages : modelsTotalPages;
+
+  const isLoading = catalogMode === 'ads' ? carsLoading : modelsLoading;
+  const currentError = catalogMode === 'ads' ? carsError?.message : modelsError?.message;
 
   return (
     <div className="min-h-screen bg-bg">
       <Header />
-      
+
       <main className="container mx-auto py-4 lg:py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Desktop Filters */}
@@ -257,7 +322,7 @@ const CatalogPage: React.FC = () => {
               onApplyFilters={handleApplyFilters}
               onResetFilters={handleResetFilters}
               onResetGroup={handleResetFilterGroup}
-              totalCount={totalCount}
+              totalCount={totalAds}
               loading={carsLoading}
             />
           </div>
@@ -282,7 +347,7 @@ const CatalogPage: React.FC = () => {
                   }}
                   onResetFilters={handleResetFilters}
                   onResetGroup={handleResetFilterGroup}
-                  totalCount={totalCount}
+                  totalCount={totalAds}
                   loading={carsLoading}
                 />
               </div>
@@ -292,25 +357,58 @@ const CatalogPage: React.FC = () => {
           {/* Main Content */}
           <div className="flex-1 min-w-0">
 
-            {/* Sort and Results Header */}
+            {/* Header: title + mode switcher + sort */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <div>
                 <h1 className="heading-1 mb-2">Каталог объявлений</h1>
-                <p className="text-secondary">
-                  Найдено {totalCount.toLocaleString()} объявлений
-                </p>
+
+                {/* Mode Switcher */}
+                <div className="catalog-mode-switcher">
+                  <button
+                    className={cn(
+                      'catalog-mode-switcher__btn',
+                      catalogMode === 'ads' && 'catalog-mode-switcher__btn--active'
+                    )}
+                    onClick={() => handleModeSwitch('ads')}
+                    disabled={isLoading}
+                  >
+                    {totalAds > 0
+                      ? `${totalAds.toLocaleString('ru-RU')} объявлений`
+                      : 'Объявления'}
+                  </button>
+                  <button
+                    className={cn(
+                      'catalog-mode-switcher__btn',
+                      catalogMode === 'models' && 'catalog-mode-switcher__btn--active'
+                    )}
+                    onClick={() => handleModeSwitch('models')}
+                    disabled={isLoading || isPendingModelsModeBlocked}
+                    title={
+                      isPendingModelsModeBlocked
+                        ? 'Недоступно при выборе поколения или комплектации'
+                        : undefined
+                    }
+                  >
+                    {totalModelsCount > 0
+                      ? `${totalModelsCount.toLocaleString('ru-RU')} моделей`
+                      : 'Модели'}
+                  </button>
+                </div>
               </div>
-              {/* Desktop sort (right side) */}
-              <div className="hidden lg:flex gap-4">
-                <SortSelect
-                  value={sort}
-                  onChange={handleSortChange}
-                  disabled={carsLoading}
-                />
-              </div>
+
+              {/* Desktop sort (right side) — only in ads mode */}
+              {catalogMode === 'ads' && (
+                <div className="hidden lg:flex gap-4">
+                  <SortSelect
+                    value={sort}
+                    onChange={handleSortChange}
+                    disabled={carsLoading}
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Mobile Filters Button (now above sort) */}
+            {/* Mobile Filters Button */}
             <div className="lg:hidden mb-4" ref={mobileFiltersBtnRef}>
               <Button
                 variant="secondary"
@@ -322,14 +420,16 @@ const CatalogPage: React.FC = () => {
               </Button>
             </div>
 
-            {/* Mobile sort (below "Все фильтры") */}
-            <div className="lg:hidden mb-4">
-              <SortSelect
-                value={sort}
-                onChange={handleSortChange}
-                disabled={carsLoading}
-              />
-            </div>
+            {/* Mobile sort — only in ads mode */}
+            {catalogMode === 'ads' && (
+              <div className="lg:hidden mb-4">
+                <SortSelect
+                  value={sort}
+                  onChange={handleSortChange}
+                  disabled={carsLoading}
+                />
+              </div>
+            )}
 
             {/* Sticky Filters FAB (mobile) */}
             {isMobile && !isMobileFiltersOpen && (
@@ -350,25 +450,35 @@ const CatalogPage: React.FC = () => {
               </div>
             )}
 
-            {/* Car Grid */}
-            <CarGrid
-              cars={cars}
-              loading={carsLoading}
-              error={carsError?.message}
-              onCardClick={handleCardClick}
-              onFavoriteToggle={handleFavoriteToggle}
-              favoriteCarIds={favoriteCarIds}
-              onRetry={handleRetry}
-              onBannerOrder={() => openLead('Заявка на подбор авто', 'Заказать подбор')}
-            />
+            {/* Content: Car Grid or Model Grid */}
+            {catalogMode === 'ads' ? (
+              <CarGrid
+                cars={cars}
+                loading={carsLoading}
+                error={carsError?.message}
+                onCardClick={handleCardClick}
+                onFavoriteToggle={handleFavoriteToggle}
+                favoriteCarIds={favoriteCarIds}
+                onRetry={handleRetry}
+                onBannerOrder={() => openLead('Заявка на подбор авто', 'Заказать подбор')}
+              />
+            ) : (
+              <ModelGrid
+                models={modelsData?.items || []}
+                loading={modelsLoading}
+                error={modelsError?.message}
+                onModelClick={handleModelClick}
+                onRetry={handleRetry}
+              />
+            )}
 
             {/* Pagination */}
             <div className="mt-8">
               <Pagination
                 currentPage={page}
-                totalPages={totalPages}
+                totalPages={currentTotalPages}
                 onPageChange={handlePageChange}
-                disabled={carsLoading}
+                disabled={isLoading}
               />
             </div>
           </div>

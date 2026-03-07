@@ -10,3 +10,5 @@ export { MapPlaceholder } from './MapPlaceholder';
 export { YouMayAlsoLike } from './YouMayAlsoLike';
 export { RelatedCars } from './RelatedCars';
 export { PhotoGallery } from './PhotoGallery';
+export { ModelCard } from './ModelCard';
+export { ModelGrid } from './ModelGrid';

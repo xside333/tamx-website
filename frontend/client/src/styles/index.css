@@ -787,6 +787,155 @@
     border-radius: var(--radius-lg);
   }
 
+  /* ===== Catalog Mode Switcher (объявления / модели) ===== */
+  .catalog-mode-switcher {
+    display: inline-flex;
+    gap: var(--space-1);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-md);
+    padding: var(--space-1);
+  }
+  .catalog-mode-switcher__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--anim-fast) var(--easing-standard);
+    white-space: nowrap;
+  }
+  .catalog-mode-switcher__btn:hover:not(:disabled) {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+  }
+  .catalog-mode-switcher__btn--active {
+    background-color: var(--color-surface) !important;
+    color: var(--color-text-primary) !important;
+    box-shadow: var(--shadow-sm);
+    font-weight: var(--font-weight-bold);
+  }
+  .catalog-mode-switcher__btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ===== Model Card ===== */
+  .model-card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow var(--anim-fast) var(--easing-standard);
+  }
+  .model-card:hover {
+    box-shadow: var(--shadow-md);
+  }
+  .model-card:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .model-card__photos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    aspect-ratio: 4 / 3;
+    gap: 2px;
+    background-color: var(--color-bg);
+  }
+  .model-card__photo-cell {
+    overflow: hidden;
+  }
+  .model-card__photo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .model-card__body {
+    padding: var(--space-4);
+  }
+  .model-card__title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    line-height: var(--line-height-tight);
+    margin-bottom: var(--space-2);
+  }
+  .model-card__years {
+    font-weight: var(--font-weight-normal);
+    color: var(--color-text-secondary);
+  }
+  .model-card__price {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-2);
+  }
+  .model-card__specs {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-normal);
+    margin-bottom: var(--space-2);
+  }
+  .model-card__count {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+  /* Skeleton state for model card */
+  .model-card__skeleton-title {
+    height: 18px;
+    border-radius: var(--radius-xs);
+    margin-bottom: var(--space-2);
+    width: 70%;
+  }
+  .model-card__skeleton-price {
+    height: 18px;
+    border-radius: var(--radius-xs);
+    margin-bottom: var(--space-2);
+    width: 80%;
+  }
+  .model-card__skeleton-specs {
+    height: 14px;
+    border-radius: var(--radius-xs);
+    margin-bottom: var(--space-2);
+    width: 90%;
+  }
+  .model-card__skeleton-count {
+    height: 14px;
+    border-radius: var(--radius-xs);
+    width: 40%;
+  }
+
+  /* ===== Model Grid ===== */
+  .model-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+  @media (max-width: 1279px) {
+    .model-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 639px) {
+    .model-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .model-grid__error,
+  .model-grid__empty {
+    padding: var(--space-12) 0;
+    text-align: center;
+  }
+
   /* Source Selector (Country filter: Все / Корея / Китай) */
   .source-selector {
     display: flex;

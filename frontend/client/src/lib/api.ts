@@ -521,6 +521,54 @@ export async function getCar(carId: string): Promise<ApiCar> {
 }
 
 /**
+ * Получить список моделей каталога (режим моделей)
+ */
+export interface CatalogModelsParams extends Omit<CatalogParams, 'generation' | 'type' | 'sortBy'> {
+  pageSize?: number;
+}
+
+export interface CatalogModelItem {
+  brand: string;
+  model: string;
+  ads_count: number;
+  photos_preview: string[];
+  year_min: number | null;
+  year_max: number | null;
+  price_min: number | null;
+  price_max: number | null;
+  displacement_min: number | null;
+  displacement_max: number | null;
+  fuel_types: string[];
+  hp_min: number | null;
+  hp_max: number | null;
+}
+
+export interface CatalogModelsApiResponse {
+  mode: 'models';
+  page: number;
+  pageSize: number;
+  totalAds: number;
+  totalModels: number;
+  totalPages: number;
+  items: CatalogModelItem[];
+}
+
+export async function getCatalogModels(params: CatalogModelsParams = {}): Promise<CatalogModelsApiResponse> {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, String(value));
+    }
+  });
+
+  const url = `${API_BASE_URL}/catalog/models${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+  const response = await fetchWithErrorHandling(url);
+
+  return response.json();
+}
+
+/**
  * Получить стоимость доставки по городам
  * Prod: https://api.tamx.ru/deliveryCost (через VITE_API_BASE_URL)
  * Dev:  ${API_BASE_URL}/deliveryCost (relative)

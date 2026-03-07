@@ -2,7 +2,7 @@ export const config = {
   testMode: false,
   fetchBatchSize: 200,
   insertBatchSize: 50,
-  recalculationIntervalMinutes: 100,
+  recalculationIntervalMinutes: 300,
   syncIntervalMinutes: 2,
   maxLogRecords: 350,
   vacuumAnalyzeInterval: 24,

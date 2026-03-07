@@ -223,6 +223,7 @@ export interface SelectProps extends BaseComponentProps {
   disabled?: boolean;
   error?: string;
   searchable?: boolean;
+  showAllOption?: boolean; // show "Все" as first option to clear selection
   triggerClassName?: string; // additional classes applied only to the clickable trigger (not the container)
   fullWidth?: boolean; // controls whether the select takes full width of its container
 }
@@ -326,6 +327,33 @@ export interface ApiCar {
     };
     monthsToPass?: number;
   };
+}
+
+// CatalogModel — агрегированная модель для режима "список моделей"
+export interface CatalogModel {
+  brand: string;
+  model: string;
+  ads_count: number;
+  photos_preview: string[];
+  year_min: number | null;
+  year_max: number | null;
+  price_min: number | null;
+  price_max: number | null;
+  displacement_min: number | null;
+  displacement_max: number | null;
+  fuel_types: string[];
+  hp_min: number | null;
+  hp_max: number | null;
+}
+
+export interface CatalogModelsResponse {
+  mode: 'models';
+  page: number;
+  pageSize: number;
+  totalAds: number;
+  totalModels: number;
+  totalPages: number;
+  items: CatalogModel[];
 }
 
 // Utility Types

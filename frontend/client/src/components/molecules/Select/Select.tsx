@@ -13,6 +13,7 @@ const Select: React.FC<SelectProps> = ({
   error,
   className,
   searchable = false,
+  showAllOption = false,
   triggerClassName,
   fullWidth = true,
   ...props
@@ -170,35 +171,59 @@ const Select: React.FC<SelectProps> = ({
         )}
 
         <div className="max-h-48 overflow-auto">
-          {filteredOptions.length === 0 ? (
+          {filteredOptions.length === 0 && !showAllOption ? (
             <div className="px-4 py-3 text-sm text-muted">
               {searchQuery ? 'Нет совпадений' : 'Нет доступных опций'}
             </div>
           ) : (
-            filteredOptions.map((option) => (
-              <div
-                key={option.value}
-                className={cn(
-                  'px-4 py-3 text-sm cursor-pointer transition-fast',
-                  'hover:bg-surface-secondary',
-                  'flex items-center justify-between',
-                  selectedOptions.includes(option.value) && 'bg-accent/10 text-accent'
-                )}
-                onClick={() => handleOptionClick(option.value)}
-              >
-                <span>{option.label}</span>
-                {option.count !== undefined && (
-                  <span className="text-xs text-muted ml-2">({option.count})</span>
-                )}
-                {multiple && selectedOptions.includes(option.value) && (
-                  <div className="w-4 h-4 bg-accent rounded-sm flex items-center justify-center">
-                    <svg className="w-3 h-3 text-on-accent" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
+            <>
+              {showAllOption && !searchQuery && (
+                <div
+                  className={cn(
+                    'px-4 py-3 text-sm cursor-pointer transition-fast',
+                    'hover:bg-surface-secondary',
+                    'flex items-center justify-between border-b border-muted',
+                    selectedOptions.length === 0 && 'bg-accent/10 text-accent'
+                  )}
+                  onClick={() => {
+                    onChange?.('');
+                    if (!multiple) setIsOpen(false);
+                  }}
+                >
+                  <span>Все</span>
+                </div>
+              )}
+              {filteredOptions.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-muted">
+                  {searchQuery ? 'Нет совпадений' : 'Нет доступных опций'}
+                </div>
+              ) : (
+                filteredOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    className={cn(
+                      'px-4 py-3 text-sm cursor-pointer transition-fast',
+                      'hover:bg-surface-secondary',
+                      'flex items-center justify-between',
+                      selectedOptions.includes(option.value) && 'bg-accent/10 text-accent'
+                    )}
+                    onClick={() => handleOptionClick(option.value)}
+                  >
+                    <span>{option.label}</span>
+                    {option.count !== undefined && (
+                      <span className="text-xs text-muted ml-2">({option.count})</span>
+                    )}
+                    {multiple && selectedOptions.includes(option.value) && (
+                      <div className="w-4 h-4 bg-accent rounded-sm flex items-center justify-center">
+                        <svg className="w-3 h-3 text-on-accent" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))
+                ))
+              )}
+            </>
           )}
         </div>
       </div>

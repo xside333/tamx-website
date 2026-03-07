@@ -97,24 +97,28 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
   };
 
   const handleBrandChange = (value: string | string[]) => {
-    const brand = typeof value === 'string' ? value : undefined;
+    const brand = typeof value === 'string' ? (value || undefined) : undefined;
     const newFilters = resetDependentFilters({ ...filters, brand }, 'brand');
     onFiltersChange(newFilters);
   };
 
   const handleModelChange = (value: string | string[]) => {
-    const model = typeof value === 'string' ? value : undefined;
+    const model = typeof value === 'string' ? (value || undefined) : undefined;
     const newFilters = resetDependentFilters({ ...filters, model }, 'model');
     onFiltersChange(newFilters);
   };
 
   const handleGenerationChange = (value: string | string[]) => {
-    const generation = typeof value === 'string' ? value : undefined;
+    const generation = typeof value === 'string' ? (value || undefined) : undefined;
     const newFilters = resetDependentFilters({ ...filters, generation }, 'generation');
     onFiltersChange(newFilters);
   };
 
   const handleTypesChange = (value: string | string[]) => {
+    if (value === '') {
+      onFiltersChange({ types: [] });
+      return;
+    }
     const types = Array.isArray(value) ? value : [value].filter(Boolean);
     onFiltersChange({ types });
   };
@@ -304,6 +308,7 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
             placeholder="Марка"
             disabled={isFiltersLoading}
             searchable={true}
+            showAllOption={!!filters.brand}
           />
 
           <Select
@@ -313,6 +318,7 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
             placeholder="Модель"
             searchable={true}
             disabled={isFiltersLoading || !filters.brand}
+            showAllOption={!!filters.model}
           />
 
           {/* Поколение — только для Кореи */}
@@ -326,6 +332,7 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
               onChange={handleGenerationChange}
               placeholder="Поколение"
               disabled={isFiltersLoading || !filters.model || isChinaOnly}
+              showAllOption={!!filters.generation}
             />
           </FilterWithTooltip>
 
@@ -341,6 +348,7 @@ const FiltersAside: React.FC<FiltersAsideProps> = ({
               placeholder="Комплектация"
               multiple
               disabled={isFiltersLoading || !filters.generation || isChinaOnly}
+              showAllOption={filters.types && filters.types.length > 0}
             />
           </FilterWithTooltip>
         </div>

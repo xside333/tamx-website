@@ -5,3 +5,4 @@ export { useStickyFilters } from './useStickyFilters';
 export { useResponsiveHeader } from './useResponsiveHeader';
 export { useMobile } from './useMobile';
 export { useHierarchicalFilters } from './useHierarchicalFilters';
+export { useCatalogModels } from './useCatalogModels';

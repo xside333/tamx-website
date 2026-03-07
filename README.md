@@ -6,62 +6,88 @@
 
 **Tamx Auto** — full-stack веб-приложение для каталога автомобилей:
 - Просмотр каталога из Кореи (Encar) и Китая (Che168)
+- Два режима отображения: список объявлений и агрегированный список моделей
 - Автоматический расчёт стоимости растаможки и логистики
 - Кредитный калькулятор для расчёта ежемесячных платежей
-- Фильтрация по множеству параметров (бренд, модель, год, цена, пробег и др.)
+- Фильтрация по множеству параметров (марка, модель, поколение, год, цена, пробег и др.)
 - Сохранение избранных автомобилей
 - Отправка заявок на покупку
 
-**Сайт**: https://auto.tamx.ru
+**Сайт**: https://auto.tamx.ru  
 **API**: https://api.tamx.ru
 
 ## Архитектура проекта
 
 ```
 tarasov-auto/
-├── .env                    # Общие переменные окружения (DATABASE_URL, токены)
+├── .env                        # Общие переменные окружения (DATABASE_URL, токены)
 │
-├── backend/                # Express API сервер (:3000)
-│   ├── index.js            # Точка входа
-│   └── components/         # Обработчики маршрутов
-│       ├── getFilteredCars.js
-│       ├── getCarDetails.js
-│       ├── getFilters.js
-│       ├── deliveryCost.js
-│       ├── heroCard.js
-│       ├── horsePower.js
-│       └── submitLead.js
+├── backend/                    # Express API сервер (:3000)
+│   ├── index.js                # Точка входа, регистрация маршрутов
+│   ├── utils/
+│   │   └── dbClient.js         # Shared PostgreSQL пул соединений
+│   └── components/             # Обработчики маршрутов
+│       ├── getFilteredCars.js      # GET /catalog
+│       ├── getCatalogModels.js     # GET /catalog/models
+│       ├── getCarDetails.js        # GET /car/:id
+│       ├── getFilters.js           # GET /filters
+│       ├── buildCatalogFilters.js  # Хелпер построения WHERE-условий
+│       ├── deliveryCost.js         # GET /deliveryCost
+│       ├── heroCard.js             # GET /herocard
+│       ├── horsePower.js           # GET|POST /hp
+│       └── submitLead.js           # POST /lead
 │
-├── frontend/               # React SPA приложение (:8000)
+├── frontend/                   # React SPA приложение (:8000)
 │   ├── client/
 │   │   └── src/
-│   │       ├── components/     # UI компоненты (Atomic Design)
-│   │       │   ├── atoms/          # Button, Input, Badge, Icon, FavoritesButton
-│   │       │   ├── molecules/      # CreditCalculator, DeliveryToCity, LocationSection
-│   │       │   ├── organisms/      # CarCard, CarGrid, Header, Footer, FiltersAside
-│   │       │   └── templates/      # CarDetailTemplate
-│   │       ├── hooks/          # useCars, useFavorites, useHierarchicalFilters
-│   │       ├── lib/            # API клиент, утилиты, форматирование, финансы
-│   │       ├── pages/          # CarDetailPage, CatalogPage, NotFound
-│   │       └── types/          # TypeScript типы
-│   └── production/         # Production-сервер (PM2, cluster mode)
+│   │       ├── components/         # UI компоненты (Atomic Design)
+│   │       │   ├── atoms/              # Button, Input, Badge, Icon, PriceTag, Skeleton, FavoritesButton
+│   │       │   ├── molecules/          # Select, CreditCalculator, DeliveryToCity, PriceRange,
+│   │       │   │                       # YearMonthRange, MileageRange, SortSelect, Pagination,
+│   │       │   │                       # FavoritesPopover, LeadModal, Hint, SourceSelector,
+│   │       │   │                       # PriceCalculationPopover, CtaBanner, SpecList,
+│   │       │   │                       # ShowMoreButton, LocationSection, CarInfo,
+│   │       │   │                       # FloatingFavoritesButton, FavoriteToggle, TradeInButton
+│   │       │   ├── organisms/          # CarCard, ModelCard, CarGrid, ModelGrid, Header, Footer,
+│   │       │   │                       # FiltersAside, CarGallery, PhotoGallery, FinanceBlock,
+│   │       │   │                       # CarSummary, RelatedCars, YouMayAlsoLike, MapPlaceholder
+│   │       │   └── templates/          # CarDetailTemplate
+│   │       ├── hooks/              # useCars, useCatalogModels, useFavorites, useFavoriteCars,
+│   │       │                       # useHierarchicalFilters, useHorsePower, useStickyFilters,
+│   │       │                       # useResponsiveHeader, useMobile
+│   │       ├── lib/                # API клиент, утилиты, форматирование, финансовые расчёты
+│   │       ├── pages/              # CatalogPage, CarDetailPage, NotFound
+│   │       └── types/              # TypeScript типы (Filters, Car, CatalogModel и др.)
+│   └── production/             # Production-сервер (PM2, cluster mode)
 │       ├── server.js
+│       ├── deploy.sh               # Скрипт сборки и деплоя
 │       └── ecosystem.config.cjs
 │
-└── database/               # Сервисы работы с данными
-    ├── encar-webcatalog-recalc/    # Пересчёт каталога и поиск HP
+└── database/                   # Сервисы работы с данными
+    ├── auto-webcatalog-recalc/     # Основной пересчёт Korea + China (PM2: auto-recalc)
     │   └── src/
-    │       ├── index_v2.js             # Основной воркер (PM2: encar-recalc-v2)
-    │       ├── components/             # calculateBatch, fetchData, hpSearchService
-    │       ├── lib/                    # panAutoApi, openaiApi, koreanMapping
-    │       └── utils/                  # dbClient, logger, telegramNotifier
+    │       ├── index.js                # Оркестратор (big cycle + small cycle)
+    │       ├── components/
+    │       │   ├── fetchEncarData.js   # Загрузка данных Encar
+    │       │   ├── fetchChe168Data.js  # Загрузка данных Che168
+    │       │   ├── calculateBatch.js   # Пересчёт растаможки батчами
+    │       │   ├── updateData.js       # Запись результатов в auto_webcatalog
+    │       │   ├── generateFilters.js  # Обновление кэша фильтров (car_filters)
+    │       │   ├── updateModelsAgg.js  # Обновление агрегированной таблицы моделей
+    │       │   ├── hpSearchService.js  # Поиск лошадиных сил
+    │       │   ├── referenceData.js    # Загрузка справочных данных
+    │       │   └── workerCalc.js       # Worker thread для параллельного расчёта
+    │       ├── lib/                    # panAutoApi, openaiApi, hpConfig, hpLogger
+    │       └── utils/                  # dbClient, logger, telegramNotifier,
+    │                                   # calcCarKorea, calcCarChina, koreanMapping,
+    │                                   # columnMapping, brandModelMapping, getHorsepower
     │
-    ├── parser-api/                 # API для парсера данных (:4000)
-    │   ├── carApi_v2.js                # Основной сервер (PM2: parser-api-v2)
-    │   └── deliveryCost/               # Данные стоимости доставки
+    ├── parser-api/                 # API для парсера данных (:4000, PM2: parser-api-v2)
+    │   ├── carApi_v2.js
+    │   └── lib/                    # hpConfig, hpLogger, koreanMapping, panAutoApi, openaiApi
     │
-    └── che168-api/                 # Receiver синхронизации Che168 (:4100)
-        ├── ecosystem.config.cjs        # PM2 конфиг (PM2: che168-receiver)
+    └── che168-api/                 # Receiver синхронизации Che168 (:4100, PM2: che168-receiver)
+        ├── ecosystem.config.cjs
         └── src/
             ├── config.js               # Конфигурация (DATABASE_URL из корневого .env)
             ├── dbClient.js             # PostgreSQL пул соединений
@@ -82,9 +108,9 @@ tarasov-auto/
 | Имя | Порт | Режим | Описание |
 |-----|------|-------|----------|
 | `backend` | 3000 | cluster (5) | REST API для фронтенда |
-| `tarasov-auto-frontend` | 8000 | cluster (8) | SSR/SPA React-приложение |
+| `tarasov-auto-frontend` | 8000 | cluster (8) | SPA React-приложение |
+| `auto-recalc` | — | fork | Пересчёт каталога Korea + China, обновление агрегаций |
 | `parser-api-v2` | 4000 | fork | API для парсера Encar |
-| `encar-recalc-v2` | — | fork | Фоновый пересчёт каталога и HP |
 | `che168-receiver` | 4100 | fork | Приёмник синхронизации Che168 |
 
 ### Nginx (reverse proxy)
@@ -109,9 +135,10 @@ tarasov-auto/
 
 | Таблица | Описание |
 |---------|----------|
-| `encar_db_prod` | Основной каталог автомобилей (Encar, Корея) |
-| `encar_webcatalog` | Пересчитанный каталог с растаможкой |
-| `che168_autoparser` | Каталог автомобилей (Che168, Китай) |
+| `auto_webcatalog` | Основной пересчитанный каталог (Korea + China) с растаможкой |
+| `auto_models_agg` | Агрегированная таблица моделей: диапазоны цен/года/HP, 4 фото-превью |
+| `encar_db_prod` | Сырые данные Encar (Корея) |
+| `che168_autoparser` | Сырые данные Che168 (Китай) |
 | `cars_hp_reference_v2` | Справочник лошадиных сил |
 | `car_filters` | Кэш фильтров каталога |
 | `customs_rates` / `customs_rate_0_3` | Таможенные ставки |
@@ -127,9 +154,8 @@ tarasov-auto/
 ### Frontend
 - **React 19** + TypeScript
 - **Vite 7** (сборка)
-- **TailwindCSS 3** (стили)
-- **Radix UI** (доступные UI-компоненты)
-- **React Query** (серверное состояние и кэширование)
+- **TailwindCSS 3** (стили, CSS-переменные / design tokens)
+- **React Query (@tanstack/react-query)** (серверное состояние и кэширование)
 - **React Router 6** (маршрутизация)
 - **Zod** (валидация)
 
@@ -151,8 +177,31 @@ tarasov-auto/
 - **UFW** — файрвол
 - **Ubuntu 24.04 LTS**
 
+## Цикл пересчёта каталога (auto-recalc)
+
+Сервис `auto-recalc` работает в двух режимах:
+
+- **Big cycle** (раз в N часов) — полный пересчёт всего каталога:
+  1. Загрузка данных из `encar_db_prod` и `che168_autoparser`
+  2. Расчёт растаможки, логистики, конвертация валют
+  3. Запись в `auto_webcatalog`
+  4. Поиск лошадиных сил (`hpSearchService`)
+  5. Обновление кэша фильтров (`car_filters`)
+  6. Пересборка агрегированной таблицы моделей (`auto_models_agg`)
+
+- **Small cycle** (раз в N минут) — инкрементальная сверка новых/изменённых записей
+
+### Агрегированная таблица моделей (`auto_models_agg`)
+
+Хранит предрассчитанные данные для режима "список моделей" на сайте:
+- Диапазоны года, цены, пробега, объёма двигателя, мощности
+- Нормализованные типы топлива (`Бензин`, `Дизель`, `Электро`, `Гибрид`, `Газ`)
+- 4 фото-превью на модель (приоритет: корейские фото `code=001`, затем китайские)
+
 ## Синхронизация Che168 (Сервер A → Сервер B)
-- Сервер auto.tamx принимает и применяет изменения через UPSERT/DELETE
+
+- Сервер A отправляет батчи изменений на порт 4100
+- Сервер B принимает и применяет изменения через UPSERT/DELETE в `che168_autoparser`
 - Авторизация: заголовок `x-api-key`
 - Порт 4100 открыт только для IP Сервера A
 
@@ -160,14 +209,16 @@ tarasov-auto/
 
 ### Backend API (api.tamx.ru)
 
-GET  /catalog          # Список автомобилей с фильтрами
-GET  /car/:id          # Детали автомобиля
-GET  /filters          # Опции фильтров
-GET  /herocard         # Карточка для главной страницы
-GET  /deliveryCost     # Стоимость доставки
-GET  /hp               # Поиск лошадиных сил
-POST /hp               # Поиск лошадиных сил (POST)
-POST /lead             # Отправка заявки
+```
+GET  /catalog             # Список автомобилей с фильтрами (пагинация, сортировка)
+GET  /catalog/models      # Агрегированный список моделей (из auto_models_agg)
+GET  /car/:id             # Детали автомобиля
+GET  /filters             # Опции фильтров каталога
+GET  /herocard            # Карточка для главной страницы
+GET  /deliveryCost        # Стоимость доставки
+GET  /hp                  # Поиск лошадиных сил
+POST /hp                  # Поиск лошадиных сил (POST)
+POST /lead                # Отправка заявки
 ```
 
 ### Che168 Receiver (порт 4100, только для Сервера A)
@@ -197,24 +248,21 @@ pm2 start index.js --name backend -i 5
 
 ```bash
 # Development
-cd frontend
-pnpm install
-pnpm dev
-
-# Production сборка и деплой
-pnpm build:production
-cd production
+cd frontend/client
 npm install
-pm2 start ecosystem.config.cjs --env production
+npm run dev
+
+# Production сборка и деплой (единственный способ деплоя)
+bash frontend/production/deploy.sh
 ```
 
 ### Database Services
 
 ```bash
-# Пересчёт каталога
-cd database/encar-webcatalog-recalc
+# Пересчёт каталога (Korea + China)
+cd database/auto-webcatalog-recalc
 npm install
-pm2 start src/index_v2.js --name encar-recalc-v2
+pm2 start ecosystem.config.cjs
 
 # Parser API
 cd database/parser-api
@@ -235,22 +283,22 @@ pm2 start ecosystem.config.cjs
 # База данных
 DATABASE_URL=postgresql://encaruser:***@localhost:5432/encar_local_db
 
-# Telegram (уведомления)
+# Telegram (уведомления от auto-recalc)
 TELEGRAM_TOKEN=***
 TELEGRAM_CHAT_ID=***
 
-# Telegram бот
+# Telegram бот (заявки с сайта)
 TG_BOT_TOKEN=***
 TG_CHAT_IDS=***
 
-# OpenAI (поиск HP)
+# OpenAI (поиск HP, fallback)
 CHATGPT_API=***
 
 # Backend
 PORT=3000
 NODE_ENV=production
 
-# Che168 Receiver (опционально)
+# Che168 Receiver
 RECEIVER_PORT=4100
 RECEIVER_API_KEY=***
 ```
@@ -263,33 +311,47 @@ pm2 ls
 
 # Логи конкретного сервиса
 pm2 logs backend --lines 50
+pm2 logs auto-recalc --lines 50
 pm2 logs che168-receiver --lines 50
 
 # Healthcheck Che168 receiver
 curl http://localhost:4100/health
 
-# Количество записей в каталогах
+# Количество записей в каталоге
 psql -U encaruser -d encar_local_db -c "
-  SELECT 'encar_db_prod' as table_name, COUNT(*) FROM encar_db_prod
-  UNION ALL
-  SELECT 'che168_autoparser', COUNT(*) FROM che168_autoparser;
+  SELECT source, COUNT(*) FROM auto_webcatalog GROUP BY source;
+"
+
+# Количество строк в агрегированной таблице моделей
+psql -U encaruser -d encar_local_db -c "
+  SELECT COUNT(DISTINCT (brand, model)) FROM auto_models_agg;
 "
 ```
 
 ## Особенности фронтенда
 
 ### Atomic Design
-- **Atoms**: Button, Input, Badge, Icon, FavoritesButton, PriceTag, Skeleton
-- **Molecules**: CreditCalculator, DeliveryToCity, FavoritesPopover, LocationSection
-- **Organisms**: CarCard, CarGrid, Header, Footer, FiltersAside, CarGallery, FinanceBlock
+
+- **Atoms**: Button, Input, Badge, Icon, PriceTag, Skeleton, FavoritesButton
+- **Molecules**: Select, CreditCalculator, DeliveryToCity, PriceRange, YearMonthRange,
+  MileageRange, SortSelect, Pagination, FavoritesPopover, LeadModal, Hint,
+  SourceSelector, PriceCalculationPopover, CtaBanner, SpecList, ShowMoreButton,
+  LocationSection, CarInfo, FloatingFavoritesButton, FavoriteToggle, TradeInButton
+- **Organisms**: CarCard, ModelCard, CarGrid, ModelGrid, Header, Footer, FiltersAside,
+  CarGallery, PhotoGallery, FinanceBlock, CarSummary, RelatedCars, YouMayAlsoLike,
+  MapPlaceholder
 - **Templates**: CarDetailTemplate
 
+### Режимы каталога
+
+- **Объявления** — постраничный список `CarCard` с полными данными по каждому авто
+- **Модели** — агрегированный список `ModelCard`: данные из `auto_models_agg`, 4 фото-превью, диапазоны цен/года/HP, типы топлива. Недоступен при выбранных фильтрах `model`, `generation`, `type`.
+
 ### Оптимизации
-- Code splitting (React.lazy)
-- Image optimization (WebP)
-- React Query caching
-- localStorage для фильтров и избранного
-- Debouncing для поиска
+
+- React Query кэширование (иерархия фильтров в `localStorage` на 24 ч.)
+- Pre-aggregated данные для режима "Модели" (запрос ~150-200 мс вместо 3+ сек)
+- Ленивая загрузка изображений (`loading="lazy"`, `referrerPolicy="no-referrer"`)
 - Memoization критичных вычислений
 
 ## Безопасность
@@ -297,7 +359,6 @@ psql -U encaruser -d encar_local_db -c "
 - HTTPS only (Nginx + Let's Encrypt)
 - Helmet для HTTP-заголовков
 - CSP (Content Security Policy)
-- XSS защита
 - CORS настроен
 - Rate limiting на API
 - UFW — ограничение доступа по портам
@@ -310,4 +371,4 @@ Private — All rights reserved © 2024-2026 Tamx
 
 ---
 
-**Последнее обновление**: 12 февраля 2026
+**Последнее обновление**: 7 марта 2026

@@ -11,6 +11,7 @@ import { calculateBatch } from './components/calculateBatch.js';
 import { updateData } from './components/updateData.js';
 import { findAndSetHp } from './components/hpSearchService.js';
 import { generateFilters } from './components/generateFilters.js';
+import { updateModelsAgg } from './components/updateModelsAgg.js';
 import { logger } from './utils/logger.js';
 import { config } from './config.js';
 import { pool } from './utils/dbClient.js';
@@ -299,6 +300,9 @@ async function runMasterProcess() {
 
     // 5) Генерация фильтров (после того как все записи на месте)
     await generateFilters();
+
+    // 6) Пересборка агрегированной таблицы моделей
+    await updateModelsAgg();
 
     // 7) Cleanup
     referenceData.clearReferences();
