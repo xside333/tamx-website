@@ -203,6 +203,7 @@ export interface InputProps extends BaseComponentProps {
   value?: string | number;
   onChange?: (value: string) => void;
   onFocus?: React.FocusEventHandler<HTMLInputElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   disabled?: boolean;
   error?: string;

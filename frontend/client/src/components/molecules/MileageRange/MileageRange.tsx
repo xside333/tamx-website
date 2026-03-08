@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BaseComponentProps } from '../../../types';
 import { cn } from '../../../lib/utils';
-import { formatMileageInput, handleUserInput } from '../../../lib/formatters';
+import { formatNumberWithSpaces, parseNumberFromString } from '../../../lib/formatters';
 import { Input } from '../../atoms';
 
 interface MileageRangeProps extends BaseComponentProps {
@@ -26,43 +26,27 @@ const MileageRange: React.FC<MileageRangeProps> = ({
   toPlaceholder = "До",
   disabled = false,
   error,
-  min = 0,
-  max,
   className,
   ...props
 }) => {
-  const formatInputValue = (value?: number) => {
-    return formatMileageInput(value);
+  const [fromFocused, setFromFocused] = useState(false);
+  const [toFocused, setToFocused] = useState(false);
+
+  const formatBlurred = (value?: number) =>
+    value ? `${formatNumberWithSpaces(value)} км` : '';
+
+  const formatFocused = (value?: number) =>
+    value ? formatNumberWithSpaces(value) : '';
+
+  const handleChange = (
+    newValue: string,
+    onChange?: (v: number | undefined) => void
+  ) => {
+    const numeric = parseNumberFromString(newValue);
+    onChange?.(numeric);
   };
 
-  // Обработчики с улучшенным форматированием
-  const handleFromInputChange = (newValue: string) => {
-    const currentValue = formatInputValue(fromValue);
-    const { numericValue } = handleUserInput(newValue, currentValue, 'км');
-    onFromChange?.(numericValue);
-  };
-
-  const handleToInputChange = (newValue: string) => {
-    const currentValue = formatInputValue(toValue);
-    const { numericValue } = handleUserInput(newValue, currentValue, 'км');
-    onToChange?.(numericValue);
-  };
-
-  const containerClasses = cn(
-    'flex w-full relative',
-    className
-  );
-
-  const fromClasses = cn(
-    'flex-1',
-    'focus-within:z-10'
-  );
-
-  const toClasses = cn(
-    'flex-1',
-    'focus-within:z-10'
-  );
-
+  const containerClasses = cn('flex w-full relative', className);
   const separatorClasses = cn(
     'absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2',
     'w-px h-[52px] bg-divider z-0'
@@ -70,23 +54,29 @@ const MileageRange: React.FC<MileageRangeProps> = ({
 
   return (
     <div className={containerClasses} {...props}>
-      <div className={fromClasses}>
+      <div className="flex-1 focus-within:z-10">
         <Input
           type="text"
+          inputMode="numeric"
           placeholder={fromPlaceholder}
-          value={formatInputValue(fromValue)}
-          onChange={handleFromInputChange}
+          value={fromFocused ? formatFocused(fromValue) : formatBlurred(fromValue)}
+          onChange={(v) => handleChange(v, onFromChange)}
+          onFocus={() => setFromFocused(true)}
+          onBlur={() => setFromFocused(false)}
           disabled={disabled}
           className="rounded-r-none border-r-0"
         />
       </div>
       <div className={separatorClasses} />
-      <div className={toClasses}>
+      <div className="flex-1 focus-within:z-10">
         <Input
           type="text"
+          inputMode="numeric"
           placeholder={toPlaceholder}
-          value={formatInputValue(toValue)}
-          onChange={handleToInputChange}
+          value={toFocused ? formatFocused(toValue) : formatBlurred(toValue)}
+          onChange={(v) => handleChange(v, onToChange)}
+          onFocus={() => setToFocused(true)}
+          onBlur={() => setToFocused(false)}
           disabled={disabled}
           className="rounded-l-none border-l-0"
         />
