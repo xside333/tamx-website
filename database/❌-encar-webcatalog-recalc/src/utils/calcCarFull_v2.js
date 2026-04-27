@@ -142,7 +142,7 @@ export function calcCarFull(car, customsRates, utilRates, utilDecember2025, exch
       }
     }
 
-    const brokerFee = 110000;
+    const brokerFee = 100000;
     const totalCustom = customsClearance + duty + utilFee + brokerFee;
 
     const customs = {

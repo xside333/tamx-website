@@ -5,5 +5,6 @@ export { Skeleton } from './Skeleton';
 export { FavoritesButton } from './FavoritesButton';
 export { PriceTag } from './PriceTag';
 export { default as Button } from './Button';
+export { Dropdown } from './Dropdown';
 
 export type { ButtonProps, InputProps } from '../../types';

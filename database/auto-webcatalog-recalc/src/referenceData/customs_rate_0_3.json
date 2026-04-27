@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1",
+    "created_at": "2025-04-11T13:55:15.785Z",
+    "min_price_eur": 0,
+    "max_price_eur": 8500,
+    "percent": 54,
+    "min_rate_per_cm3_eur": 2.5
+  },
+  {
+    "id": "2",
+    "created_at": "2025-04-11T13:56:01.914Z",
+    "min_price_eur": 8501,
+    "max_price_eur": 16700,
+    "percent": 48,
+    "min_rate_per_cm3_eur": 3.5
+  },
+  {
+    "id": "3",
+    "created_at": "2025-04-11T13:56:29.921Z",
+    "min_price_eur": 16701,
+    "max_price_eur": 42300,
+    "percent": 48,
+    "min_rate_per_cm3_eur": 5.5
+  },
+  {
+    "id": "4",
+    "created_at": "2025-04-11T13:57:01.963Z",
+    "min_price_eur": 42301,
+    "max_price_eur": 84500,
+    "percent": 48,
+    "min_rate_per_cm3_eur": 7.5
+  },
+  {
+    "id": "5",
+    "created_at": "2025-04-11T13:57:24.877Z",
+    "min_price_eur": 84501,
+    "max_price_eur": 169000,
+    "percent": 48,
+    "min_rate_per_cm3_eur": 15
+  },
+  {
+    "id": "6",
+    "created_at": "2025-04-11T13:57:55.406Z",
+    "min_price_eur": 169001,
+    "max_price_eur": 99999999,
+    "percent": 48,
+    "min_rate_per_cm3_eur": 20
+  }
+]

@@ -18,5 +18,6 @@ export { Hint } from './Hint';
 export { CarInfo } from './CarInfo';
 export { TradeInButton } from './TradeInButton';
 export { SourceSelector } from './SourceSelector';
+export { MapModal } from './MapModal';
 
 export type { SelectProps } from '../../types';

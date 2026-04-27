@@ -1,0 +1,58 @@
+[
+  {
+    "id": "23",
+    "created_at": "2025-03-28T08:56:46.539Z",
+    "rate_rub": 1067,
+    "price_min": 0,
+    "price_max": 200000
+  },
+  {
+    "id": "24",
+    "created_at": "2025-03-28T08:56:46.540Z",
+    "rate_rub": 2134,
+    "price_min": 200000.01,
+    "price_max": 450000
+  },
+  {
+    "id": "25",
+    "created_at": "2025-03-28T08:56:46.540Z",
+    "rate_rub": 4269,
+    "price_min": 450000.01,
+    "price_max": 1200000
+  },
+  {
+    "id": "26",
+    "created_at": "2025-03-28T08:56:46.540Z",
+    "rate_rub": 11746,
+    "price_min": 1200000.01,
+    "price_max": 2700000
+  },
+  {
+    "id": "27",
+    "created_at": "2025-03-28T08:56:46.540Z",
+    "rate_rub": 16524,
+    "price_min": 2700000.01,
+    "price_max": 4200000
+  },
+  {
+    "id": "28",
+    "created_at": "2025-03-28T08:56:46.540Z",
+    "rate_rub": 21344,
+    "price_min": 4200000.01,
+    "price_max": 5500000
+  },
+  {
+    "id": "29",
+    "created_at": "2025-03-28T08:56:46.540Z",
+    "rate_rub": 27540,
+    "price_min": 5500000.01,
+    "price_max": 7000000
+  },
+  {
+    "id": "30",
+    "created_at": "2025-03-28T08:56:46.540Z",
+    "rate_rub": 30000,
+    "price_min": 7000000.01,
+    "price_max": 999999999
+  }
+]

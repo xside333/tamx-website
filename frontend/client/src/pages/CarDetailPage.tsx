@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getCar } from '../lib/api';
 import { transformApiCarToCar } from '../lib/apiTransforms';
 import { cn, formatPrice, formatMileage, computeDefaultMonthlyPayment } from '../lib/utils';
-import { Header, Footer, CarCard, PhotoGallery } from '../components/organisms';
+import { HeaderV2, Footer, CarCard, PhotoGallery } from '../components/organisms';
 import { ErrorBoundary } from '../components/organisms/CarGrid/ErrorBoundary';
 import { Icon, Button } from '../components/atoms';
 import { Hint } from '../components/molecules';
@@ -83,7 +83,7 @@ const CarDetailPage: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-bg flex flex-col detail-page">
-        <Header />
+        <HeaderV2 />
         <main className="flex-1 flex items-center justify-center p-4">
           <div className="text-center">
             <h1 className="heading-1 mb-4">Автомобиль не найден</h1>
@@ -100,7 +100,7 @@ const CarDetailPage: React.FC = () => {
   if (isLoading || !carData) {
     return (
       <div className="min-h-screen bg-bg flex flex-col detail-page">
-        <Header />
+        <HeaderV2 />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-primary">Загрузка...</div>
         </main>
@@ -121,7 +121,7 @@ const CarDetailPage: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-bg flex flex-col detail-page">
-        <Header />
+        <HeaderV2 />
 
         <main className="px-4 lg:px-16 pt-2 pb-3 lg:py-8">
           <div className="max-w-[1512px] mx-auto space-y-6">
@@ -487,7 +487,7 @@ const SearchBanner: React.FC<{ onOrder?: () => void }> = ({ onOrder }) => (
       </div>
       <div className="space-y-1">
         <h2 className="cta-banner-text heading-2">Ищете, но всё не то?</h2>
-        <p className="cta-banner-text heading-2">Мы бесплатно подберем нужное авто</p>
+        <p className="cta-banner-text heading-2"><b>Акция этого месяца: скидка 50% на помощь в заказе авто</b><br/>Подберём и привезём нужный автомобиль всего за 50 000 ₽</p>
       </div>
     </div>
     

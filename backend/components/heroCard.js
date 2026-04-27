@@ -1,9 +1,8 @@
 import { pool } from '../utils/dbClient.js';
 
 export async function heroCard(req, res) {
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
-
     // Основной запрос с условием по дате и trust
     const query = `
       SELECT json, hp FROM encar_webcatalog
@@ -32,10 +31,7 @@ export async function heroCard(req, res) {
     const totalCarsResult = await client.query(totalCarsQuery);
     const totalcars = parseInt(totalCarsResult.rows[0].count, 10);
 
-    client.release();
-
     if (rows.length > 0) {
-      // Добавляем hp из колонки в json
       const carData = {
         ...rows[0].json,
         hp: rows[0].hp ?? 0
@@ -48,5 +44,7 @@ export async function heroCard(req, res) {
   } catch (error) {
     console.error('Ошибка при получении heroCard:', error);
     res.status(500).json({ error: 'Ошибка сервера.' });
+  } finally {
+    client.release();
   }
 }

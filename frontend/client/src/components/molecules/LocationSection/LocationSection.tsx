@@ -26,7 +26,7 @@ const LocationSection: React.FC = () => {
     <section className="bg-surface rounded-lg lg:rounded-[32px] p-4 lg:p-8">
       <div className="mb-6">
         <h2 className="text-primary text-xl lg:text-2xl font-bold leading-tight lg:leading-[28.8px] mb-2">
-          Тарасов AUTO Новосибирск
+          АвтоДилер Тарасов
         </h2>
         <p className="text-primary text-base">Город Новосибирск, ул. Ленина 85</p>
 

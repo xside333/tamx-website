@@ -26,7 +26,7 @@ git clone <repository-url>
 cd <project-directory>
 
 # Запустите деплой
-./production/deploy.sh
+./frontend/production/deploy.sh
 ```
 
 ### 3. Проверка

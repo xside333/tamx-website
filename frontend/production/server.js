@@ -24,6 +24,9 @@ app.set('trust proxy', true);
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
+    // HSTS выставляется в nginx — отключаем дублирование
+    strictTransportSecurity: false,
+    referrerPolicy: { policy: 'no-referrer-when-downgrade' },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -51,7 +54,8 @@ app.use(
           "https://mc.webvisor.org",
           "https://*.tile.yandex.net",
           "https://yastatic.net",
-          "https://mc.yandex.ru"
+          "https://mc.yandex.ru",
+          "https://*.mail.ru"
         ],
 
         scriptSrc: [
@@ -61,7 +65,9 @@ app.use(
           "https://api-maps.yandex.ru",
           "https://yastatic.net",
           "https://*.yandex.ru",
-          "https://mc.yandex.ru"
+          "https://mc.yandex.ru",
+          "https://www.googletagmanager.com",
+          "https://*.mail.ru"
         ],
 
         connectSrc: [
@@ -74,6 +80,8 @@ app.use(
           "https://*.maps.yandex.net",
           "https://mc.webvisor.org",
           "https://*.tile.yandex.net",
+          "https://www.google-analytics.com",
+          "https://*.mail.ru",
           "wss://mc.yandex.ru",
           "wss://mc.webvisor.org",
           "wss://*.yandex.ru",

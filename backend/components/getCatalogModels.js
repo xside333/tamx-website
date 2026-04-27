@@ -281,8 +281,8 @@ export async function getCatalogModels(req, res) {
 
   const needsRecalc = hasRangeOrTypeFilters(req.query);
 
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
     let items, totalModels, totalAds, totalPages;
 
     if (!needsRecalc) {
@@ -353,70 +353,12 @@ export async function getCatalogModels(req, res) {
       }));
 
     } else {
-      // ── Гибридный путь: agg для ранжирования, webcatalog для точных агрегатов ─
-      const { conditions: aggConds, params: aggParams } = buildAggFilters(req.query);
-      const aggWhereClause = aggConds.length ? `WHERE ${aggConds.join(' AND ')}` : '';
-
-      // Параметры для webcatalog-фильтров начинаем после aggParams
+      // ── Точный путь: агрегация из auto_webcatalog с правильной сортировкой ─
       const { conditions: wcConds, params: wcParams } = buildWebcatalogFilters(req.query, 1);
-      const wcWhereClause = wcConds.length ? `AND ${wcConds.join(' AND ')}` : '';
+      const wcWhereClause = wcConds.length ? `WHERE ${wcConds.join(' AND ')}` : '';
+      const wcAndClause = wcConds.length ? `AND ${wcConds.join(' AND ')}` : '';
 
-      // Запрос 1: топ-N пар (brand, model) из agg + счётчики
-      // Запрос 2: точные агрегаты для топ-N пар из webcatalog
-      // Запрос 3: фото из agg для тех же пар
-      // Все три параметра независимы — используем разные наборы params
-
-      const topModelsQuery = `
-        SELECT brand, model
-        FROM auto_models_agg
-        ${aggWhereClause}
-        GROUP BY brand, model
-        ORDER BY SUM(ads_count) DESC
-        LIMIT ${limit} OFFSET ${offset};
-      `;
-
-      const countQuery = `
-        SELECT
-          COUNT(DISTINCT (brand, model)) AS total_models,
-          SUM(ads_count)                 AS total_ads
-        FROM auto_models_agg
-        ${aggWhereClause};
-      `;
-
-      // Выполняем параллельно топ-N и счётчики
-      const [topResult, countResult] = await Promise.all([
-        client.query(topModelsQuery, aggParams),
-        client.query(countQuery, aggParams),
-      ]);
-
-      totalModels = parseInt(countResult.rows[0].total_models, 10);
-      totalAds = parseInt(countResult.rows[0].total_ads, 10);
-      totalPages = Math.ceil(totalModels / limit);
-
-      const topPairs = topResult.rows; // [{ brand, model }, ...]
-
-      if (topPairs.length === 0) {
-        client.release();
-        return res.json({
-          mode: 'models',
-          page: currentPage,
-          pageSize: limit,
-          totalAds,
-          totalModels,
-          totalPages,
-          items: [],
-        });
-      }
-
-      // Строим VALUES-список для точной выборки пар
-      // Используем JOIN вместо IN (row constructor) — pg не может определить типы параметров
-      const valuesEntries = topPairs
-        .map((_, i) => `($${wcParams.length + i * 2 + 1}::text, $${wcParams.length + i * 2 + 2}::text)`)
-        .join(', ');
-      const pairParams = topPairs.flatMap(p => [p.brand, p.model]);
-
-      // Пересчёт точных агрегатов из webcatalog для топ-N пар
-      const recalcQuery = `
+      const aggQuery = `
         SELECT
           w.brand,
           w.model,
@@ -431,18 +373,52 @@ export async function getCatalogModels(req, res) {
           MAX(w.hp)                                             AS hp_max,
           array_agg(DISTINCT w.fuel_filter) FILTER (WHERE w.fuel_filter IS NOT NULL) AS fuel_filters
         FROM auto_webcatalog w
-        JOIN (VALUES ${valuesEntries}) AS pairs(brand, model)
-          ON w.brand = pairs.brand AND w.model = pairs.model
-        WHERE TRUE ${wcWhereClause}
-        GROUP BY w.brand, w.model;
+        ${wcWhereClause}
+        GROUP BY w.brand, w.model
+        ORDER BY ads_count DESC
+        LIMIT ${limit} OFFSET ${offset};
       `;
 
-      // Фото из webcatalog для топ-N пар с применением тех же фильтров:
-      // - Korean (K): photo с code='001'
-      // - Chinese (C): первый URL из массива photos
-      const photosValuesEntries = topPairs
+      const countQuery = `
+        SELECT
+          COUNT(*)  AS total_models,
+          SUM(cnt)  AS total_ads
+        FROM (
+          SELECT brand, model, COUNT(*) AS cnt
+          FROM auto_webcatalog w
+          ${wcWhereClause}
+          GROUP BY brand, model
+        ) sub;
+      `;
+
+      const [aggResult, countResult] = await Promise.all([
+        client.query(aggQuery, wcParams),
+        client.query(countQuery, wcParams),
+      ]);
+
+      totalModels = parseInt(countResult.rows[0].total_models, 10) || 0;
+      totalAds = parseInt(countResult.rows[0].total_ads, 10) || 0;
+      totalPages = Math.ceil(totalModels / limit);
+
+      const topPairs = aggResult.rows.map(r => ({ brand: r.brand, model: r.model }));
+
+      if (topPairs.length === 0) {
+        return res.json({
+          mode: 'models',
+          page: currentPage,
+          pageSize: limit,
+          totalAds,
+          totalModels,
+          totalPages,
+          items: [],
+        });
+      }
+
+      // Фото из webcatalog для страницы результатов
+      const valuesEntries = topPairs
         .map((_, i) => `($${wcParams.length + i * 2 + 1}::text, $${wcParams.length + i * 2 + 2}::text)`)
         .join(', ');
+      const pairParams = topPairs.flatMap(p => [p.brand, p.model]);
 
       const photosQuery = `
         WITH filtered_photos AS (
@@ -459,11 +435,11 @@ export async function getCatalogModels(req, res) {
             END AS photo_url,
             ROW_NUMBER() OVER (PARTITION BY w.brand, w.model ORDER BY w.id) AS rn
           FROM auto_webcatalog w
-          JOIN (VALUES ${photosValuesEntries}) AS pairs(brand, model)
+          JOIN (VALUES ${valuesEntries}) AS pairs(brand, model)
             ON w.brand = pairs.brand AND w.model = pairs.model
           WHERE w.photos IS NOT NULL
             AND jsonb_array_length(w.photos) > 0
-            ${wcWhereClause}
+            ${wcAndClause}
         )
         SELECT brand, model,
           array_agg(photo_url ORDER BY rn) FILTER (WHERE rn <= 4 AND photo_url IS NOT NULL) AS photos_preview
@@ -472,32 +448,13 @@ export async function getCatalogModels(req, res) {
         GROUP BY brand, model;
       `;
 
-      // recalc: wcParams идут первыми, затем pairParams
-      const recalcParams = [...wcParams, ...pairParams];
-      // photos: wcParams идут первыми, затем pairParams (тот же порядок)
-      const photosParams = [...wcParams, ...pairParams];
+      const photosResult = await client.query(photosQuery, [...wcParams, ...pairParams]);
 
-      const [recalcResult, photosResult] = await Promise.all([
-        client.query(recalcQuery, recalcParams),
-        client.query(photosQuery, photosParams),
-      ]);
-
-      // Собираем индекс фото по (brand, model)
       const photosMap = new Map(
         photosResult.rows.map(r => [`${r.brand}::${r.model}`, r.photos_preview])
       );
 
-      // Сохраняем порядок из topPairs
-      const recalcMap = new Map(
-        recalcResult.rows.map(r => [`${r.brand}::${r.model}`, r])
-      );
-
-      items = topPairs.map(({ brand, model }) => {
-        const key = `${brand}::${model}`;
-        const row = recalcMap.get(key);
-        if (!row) return null;
-
-        // Нормализуем fuel_filter → читабельные названия, дедуплицируем
+      items = aggResult.rows.map(row => {
         const fuelTypes = [...new Set(
           (row.fuel_filters || [])
             .map(normalizeFuelFilter)
@@ -508,7 +465,7 @@ export async function getCatalogModels(req, res) {
           brand: row.brand,
           model: row.model,
           ads_count: parseInt(row.ads_count, 10),
-          photos_preview: photosMap.get(key) || [],
+          photos_preview: photosMap.get(`${row.brand}::${row.model}`) || [],
           year_min: row.year_min ? parseInt(row.year_min) : null,
           year_max: row.year_max ? parseInt(row.year_max) : null,
           price_min: row.price_min ? parseInt(row.price_min) : null,
@@ -519,10 +476,8 @@ export async function getCatalogModels(req, res) {
           hp_min: row.hp_min ? parseInt(row.hp_min) : null,
           hp_max: row.hp_max ? parseInt(row.hp_max) : null,
         };
-      }).filter(Boolean);
+      });
     }
-
-    client.release();
 
     res.json({
       mode: 'models',
@@ -536,5 +491,7 @@ export async function getCatalogModels(req, res) {
   } catch (error) {
     console.error('Ошибка при получении списка моделей:', error);
     res.status(500).json({ error: 'Ошибка сервера.' });
+  } finally {
+    client.release();
   }
 }

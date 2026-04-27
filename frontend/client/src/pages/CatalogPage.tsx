@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import { Button, Icon } from '../components/atoms';
 import { SortSelect, FloatingFavoritesButton, Pagination, LeadModal } from '../components/molecules';
-import { Header, Footer, CarGrid, FiltersAside, ModelGrid } from '../components/organisms';
+import { HeaderV2, Footer, CarGrid, FiltersAside, ModelGrid } from '../components/organisms';
 import { useCars, useFavorites, useMobile, useCatalogModels } from '../hooks';
 import { Filters, FiltersPatch, SortOption, Car } from '../types';
 import { transformUrlParamsToFilters, transformFiltersToUrlParams } from '../lib/apiTransforms';
@@ -23,6 +23,12 @@ const CatalogPage: React.FC = () => {
   const [catalogMode, setCatalogMode] = useState<CatalogMode>(() => {
     return (searchParams.get('mode') as CatalogMode) || 'ads';
   });
+
+  // Сохранённое состояние для кнопки "Назад" при переходе из моделей в объявления
+  const [modelsBackState, setModelsBackState] = useState<{
+    filters: Filters;
+    page: number;
+  } | null>(null);
 
   // Состояние фильтров
   const [appliedFilters, setAppliedFilters] = useState<Filters>(() =>
@@ -172,6 +178,7 @@ const CatalogPage: React.FC = () => {
     setAppliedFilters(emptyFilters);
     setPage(1);
     setSort('date_desc');
+    setModelsBackState(null);
   };
 
   const handleResetFilterGroup = (group: string) => {
@@ -233,10 +240,12 @@ const CatalogPage: React.FC = () => {
     if (mode === catalogMode) return;
     setCatalogMode(mode);
     setPage(1);
+    if (mode === 'models') setModelsBackState(null);
   };
 
   const handleModelClick = (brand: string, model: string) => {
-    // При клике на модель переходим в режим объявлений с фильтром по этой модели
+    setModelsBackState({ filters: appliedFilters, page });
+
     const newFilters: Filters = {
       ...appliedFilters,
       brand,
@@ -247,6 +256,15 @@ const CatalogPage: React.FC = () => {
     setPendingFilters(newFilters);
     setCatalogMode('ads');
     setPage(1);
+  };
+
+  const handleBackToModels = () => {
+    if (!modelsBackState) return;
+    setAppliedFilters(modelsBackState.filters);
+    setPendingFilters(modelsBackState.filters);
+    setPage(modelsBackState.page);
+    setCatalogMode('models');
+    setModelsBackState(null);
   };
 
   const toggleMobileFilters = () => {
@@ -309,7 +327,7 @@ const CatalogPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-bg">
-      <Header />
+      <HeaderV2 />
 
       <main className="container mx-auto py-4 lg:py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -363,36 +381,48 @@ const CatalogPage: React.FC = () => {
                 <h1 className="heading-1 mb-2">Каталог объявлений</h1>
 
                 {/* Mode Switcher */}
-                <div className="catalog-mode-switcher">
-                  <button
-                    className={cn(
-                      'catalog-mode-switcher__btn',
-                      catalogMode === 'ads' && 'catalog-mode-switcher__btn--active'
-                    )}
-                    onClick={() => handleModeSwitch('ads')}
-                    disabled={isLoading}
-                  >
-                    {totalAds > 0
-                      ? `${totalAds.toLocaleString('ru-RU')} объявлений`
-                      : 'Объявления'}
-                  </button>
-                  <button
-                    className={cn(
-                      'catalog-mode-switcher__btn',
-                      catalogMode === 'models' && 'catalog-mode-switcher__btn--active'
-                    )}
-                    onClick={() => handleModeSwitch('models')}
-                    disabled={isLoading || isPendingModelsModeBlocked}
-                    title={
-                      isPendingModelsModeBlocked
-                        ? 'Недоступно при выборе поколения или комплектации'
-                        : undefined
-                    }
-                  >
-                    {totalModelsCount > 0
-                      ? `${totalModelsCount.toLocaleString('ru-RU')} моделей`
-                      : 'Модели'}
-                  </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {modelsBackState && catalogMode === 'ads' && (
+                    <button
+                      className="catalog-back-btn"
+                      onClick={handleBackToModels}
+                      disabled={isLoading}
+                    >
+                      <Icon name="chevron-left" size="sm" />
+                      <span>Назад</span>
+                    </button>
+                  )}
+                  <div className="catalog-mode-switcher">
+                    <button
+                      className={cn(
+                        'catalog-mode-switcher__btn',
+                        catalogMode === 'ads' && 'catalog-mode-switcher__btn--active'
+                      )}
+                      onClick={() => handleModeSwitch('ads')}
+                      disabled={isLoading}
+                    >
+                      {totalAds > 0
+                        ? `${totalAds.toLocaleString('ru-RU')} объявлений`
+                        : 'Объявления'}
+                    </button>
+                    <button
+                      className={cn(
+                        'catalog-mode-switcher__btn',
+                        catalogMode === 'models' && 'catalog-mode-switcher__btn--active'
+                      )}
+                      onClick={() => handleModeSwitch('models')}
+                      disabled={isLoading || isPendingModelsModeBlocked}
+                      title={
+                        isPendingModelsModeBlocked
+                          ? 'Недоступно при выборе поколения или комплектации'
+                          : undefined
+                      }
+                    >
+                      {totalModelsCount > 0
+                        ? `${totalModelsCount.toLocaleString('ru-RU')} моделей`
+                        : 'Модели'}
+                    </button>
+                  </div>
                 </div>
               </div>
 

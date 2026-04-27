@@ -20,7 +20,7 @@ const CtaBanner: React.FC<CtaBannerProps> = ({ className, onOrder }) => {
             Ищете, но всё не то?
           </h3>
           <p className="cta-banner-text text-base md:text-lg font-bold leading-tight">
-            Мы бесплатно подберем нужное авто
+            <b>Акция этого месяца: скидка 50% на помощь в заказе авто</b><br/>Подберём и привезём нужный автомобиль всего за 50 000 ₽
           </p>
         </div>
       </div>

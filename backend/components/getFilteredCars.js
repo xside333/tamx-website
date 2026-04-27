@@ -46,13 +46,10 @@ export async function getFilteredCars(req, res) {
     SELECT COUNT(*) FROM auto_webcatalog ${whereClause};
   `;
 
+  const client = await pool.connect();
   try {
-    const client = await pool.connect();
-
     const { rows } = await client.query(query, params);
     const totalCountResult = await client.query(totalCountQuery, params);
-
-    client.release();
 
     const totalcars = parseInt(totalCountResult.rows[0].count, 10);
     const cars = rows.map(row => ({
@@ -69,5 +66,7 @@ export async function getFilteredCars(req, res) {
   } catch (error) {
     console.error('Ошибка при получении списка авто:', error);
     res.status(500).json({ error: 'Ошибка сервера.' });
+  } finally {
+    client.release();
   }
 }

@@ -383,6 +383,37 @@ const Icon: React.FC<IconProps> = ({
           </svg>
         );
 
+      case 'tiktok':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.59 6.69C18.882 5.892 18.488 4.862 18.49 3.79V3H14.95V16.14C14.9226 16.9072 14.6011 17.6337 14.054 18.1654C13.5069 18.6971 12.7723 18.997 12.005 19.001C10.395 19.001 9.05 17.679 9.05 16.039C9.05 14.079 10.915 12.603 12.845 13.179V9.565C8.92 9.089 5.5 12.173 5.5 16.039C5.5 19.808 8.59 22.5 12 22.5C15.645 22.5 18.49 19.655 18.49 16.01V9.31C19.937 10.371 21.688 10.943 23.49 10.94V7.4C23.49 7.4 21.22 7.49 19.59 6.69Z" fill={color}/>
+          </svg>
+        );
+
+      case 'max':
+        return (
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4h16v11a3 3 0 0 1-3 3H9l-4 3v-3H7a3 3 0 0 1-3-3V4zm4 5h8v2H8V9zm0-3h12v2H8V6zm0 6h6v2H8v-2z" fill={color}/>
+          </svg>
+        );
+
+      case 'user':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="12" cy="7" r="4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        );
+
+      case 'user-circle':
+        return (
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2"/>
+            <circle cx="12" cy="9" r="3" stroke={color} strokeWidth="2"/>
+            <path d="M6.168 18.849A4 4 0 0 1 10 16h4a4 4 0 0 1 3.834 2.855" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        );
+
       default:
         return (
           <div

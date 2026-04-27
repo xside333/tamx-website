@@ -13,7 +13,7 @@ interface UseCatalogModelsParams {
 
 function buildModelApiParams(filters: Filters, page: number) {
   const apiParams = transformFiltersToApiParams(filters, page);
-  const { generation, type, sortBy, ...modelParams } = apiParams as any;
+  const { generation, type, model, sortBy, ...modelParams } = apiParams as any;
   return modelParams;
 }
 

@@ -14,11 +14,11 @@ interface FooterProps extends BaseComponentProps {
 }
 
 const Footer: React.FC<FooterProps> = ({
-  copyright = '© 2025 Тарасов AUTO',
-  legalText = 'Материалы данного сайта являются публичной офертой только на услугу сопровождения Агентом приобретения транспортного средства Клиентом. Во всех остальных случаях сайт носит исключительно информационный характер. Тарасов AUTO © 2025.',
+  copyright = '© 2026 АвтоДилер Тарасов',
+  legalText = 'Материалы данного сайта являются публичной офертой только на услугу сопровождения Агентом приобретения транспортного средства Клиентом. Во всех остальных случаях сайт носит исключительно информационный характер.',
   legalLinks = [
-    { label: 'Политика конфиденциальности', href: 'https://tarasov-auto.ru/privacy_policy/', external: true },
-    { label: 'Пользовательское соглашение', href: 'https://tarasov-auto.ru/terms_of_service/', external: true },
+    { label: 'Политика конфиденциальности', href: 'https://tamx.ru/privacy-policy-2/', external: true },
+    { label: 'Пользовательское соглашение', href: 'https://tamx.ru/terms_of_service/', external: true },
   ],
   className,
   ...props

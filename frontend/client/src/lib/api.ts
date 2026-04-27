@@ -252,8 +252,6 @@ async function fetchWithErrorHandling(url: string, options?: RequestInit, retryC
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; CarCatalog/1.0)',
-        'X-Requested-With': 'XMLHttpRequest',
         ...options?.headers,
       },
     });

@@ -98,7 +98,7 @@ export function calcCarChina(car, customsRates, utilRates, utilDecember2025, exc
 
   // Таможенная пошлина — по cny_rub_vtb (прямой курс)
   const priceRUBforFee = priceCNY * cnyRubVtb;
-  const customsClearance = 100000;
+  const customsClearance = 50000;
 
   let duty = 0;
   if (customsRate.mode === 'eur') {

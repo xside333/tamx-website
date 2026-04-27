@@ -1,4 +1,4 @@
-export { Header } from './Header';
+export { Header, HeaderV2 } from './Header';
 export { Footer } from './Footer';
 export { CarCard } from './CarCard';
 export { CarGrid } from './CarGrid';

@@ -49,7 +49,7 @@ export function calcCarFull(car, customsRates, utilRates, exchange, customsFee, 
     const utilFee = utilMatch?.rate ?? 0;
 
     const priceRUBforFee = priceKRW * krwRub;
-    const customsClearance = 100000;
+    const customsClearance = 50000;
 
     let duty = 0;
     if (customsRate.mode === "eur") {

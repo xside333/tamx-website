@@ -139,7 +139,7 @@ export const PriceCalculationPopover: React.FC<PriceCalculationPopoverProps> = (
           <div
             ref={popoverRef}
             className={cn(
-              'pointer-events-auto bg-surface rounded-t-[32px] p-4 w-full max-w-[640px] shadow-lg border border-muted transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)]',
+              'pointer-events-auto bg-surface rounded-t-[32px] p-4 w-full max-w-[640px] shadow-lg border border-muted transition-transform duration-300 ease-[var(--easing-emphasized)]',
               visible ? 'translate-y-0' : 'translate-y-full',
               className
             )}
@@ -156,10 +156,10 @@ export const PriceCalculationPopover: React.FC<PriceCalculationPopoverProps> = (
             <div className="space-y-4 mb-4 max-h-[70vh] overflow-y-auto">
               <PriceRow label={getCountryPriceLabel(carData)} value={getCountryPriceRUB(carData)} />
               <PriceRow label={getCountryExpensesLabel(carData)} value={getCountryExpensesRUB(carData)} />
-              <PriceRow label="Таможенная ставка" value={getCustomsDuty(carData)} />
+              <PriceRow label="Таможенный платеж" value={getCustomsDuty(carData)} />
               <PriceRow label="Утилизационный сбор" value={getUtilFee(carData)} />
-              <PriceRow label="Услуги во Владивостоке" value={getBrokerFee(carData)} />
-              <PriceRow label="Комиссия" value={getCustomsClearance(carData)} />
+              <PriceRow label="Оформление авто брокером" value={getBrokerFee(carData)} />
+              <PriceRow label="Комиссия компании" value={getCustomsClearance(carData)} />
             </div>
             <div className="border-t border-muted pt-3">
               <div className="flex items-center justify-between">
@@ -178,7 +178,7 @@ export const PriceCalculationPopover: React.FC<PriceCalculationPopoverProps> = (
       <div
         ref={popoverRef}
         className={cn(
-          'bg-surface rounded-[16px] p-4 w-[400px] shadow-lg border border-muted transition-all duration-200 ease-[cubic-bezier(0.2,0,0,1)]',
+          'bg-surface rounded-[16px] p-4 w-[400px] shadow-lg border border-muted transition-all duration-200 ease-[var(--easing-emphasized)]',
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2',
           className
         )}
